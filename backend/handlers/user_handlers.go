@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/user/tennis-connect/models"
 	"github.com/user/tennis-connect/repository"
+	"github.com/user/tennis-connect/utils"
 )
 
 // UserHandler handles user-related HTTP requests
@@ -26,10 +27,32 @@ func NewUserHandler(userRepo *repository.UserRepository) *UserHandler {
 
 // RegisterUser handles user registration
 func (h *UserHandler) RegisterUser(c *gin.Context) {
-	var user models.User
-	if err := c.ShouldBindJSON(&user); err != nil {
+	var registrationData struct {
+		Name        string          `json:"name" binding:"required"`
+		Email       string          `json:"email" binding:"required"`
+		Password    string          `json:"password" binding:"required"`
+		SkillLevel  float32         `json:"skillLevel" binding:"required"`
+		GameStyles  []string        `json:"gameStyles"`
+		Gender      string          `json:"gender"`
+		IsNewToArea bool            `json:"isNewToArea"`
+		Location    models.Location `json:"location"`
+	}
+
+	if err := c.ShouldBindJSON(&registrationData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Create user model
+	user := models.User{
+		Name:         registrationData.Name,
+		Email:        registrationData.Email,
+		PasswordHash: registrationData.Password, // This will be hashed in the repository
+		SkillLevel:   registrationData.SkillLevel,
+		GameStyles:   registrationData.GameStyles,
+		Gender:       registrationData.Gender,
+		IsNewToArea:  registrationData.IsNewToArea,
+		Location:     registrationData.Location,
 	}
 
 	// Create user in the database
@@ -70,9 +93,19 @@ func (h *UserHandler) LoginUser(c *gin.Context) {
 		return
 	}
 
-	// Generate JWT token (in a real implementation)
-	// TODO: Implement JWT token generation
-	token := "mock_jwt_token"
+	// Get JWT manager from context (set by main.go)
+	jwtManager, exists := c.Get("jwtManager")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "JWT manager not available"})
+		return
+	}
+
+	// Generate JWT token
+	token, err := jwtManager.(*utils.JWTManager).GenerateToken(user.ID, user.Email, user.Name)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"token": token,

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/user/tennis-connect/database"
 	"github.com/user/tennis-connect/handlers"
 	"github.com/user/tennis-connect/repository"
+	"github.com/user/tennis-connect/utils"
 )
 
 func main() {
@@ -49,6 +51,9 @@ func main() {
 	eventRepo := repository.NewEventRepository(db)
 	communityRepo := repository.NewCommunityRepository(db)
 
+	// Initialize JWT manager
+	jwtManager := utils.NewJWTManager(cfg.JWT.Secret, cfg.JWT.Expiration)
+
 	// Initialize handlers
 	userHandler := handlers.NewUserHandler(userRepo)
 	courtHandler := handlers.NewCourtHandler(courtRepo)
@@ -59,6 +64,12 @@ func main() {
 	// Initialize Gin router
 	r := gin.Default()
 
+	// Set JWT manager in context for handlers
+	r.Use(func(c *gin.Context) {
+		c.Set("jwtManager", jwtManager)
+		c.Next()
+	})
+
 	// Configure CORS
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000"},
@@ -68,7 +79,7 @@ func main() {
 	}))
 
 	// Routes
-	setupRoutes(r, userHandler, courtHandler, bulletinHandler, eventHandler, communityHandler)
+	setupRoutes(r, userHandler, courtHandler, bulletinHandler, eventHandler, communityHandler, jwtManager)
 
 	// Start server
 	serverAddr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
@@ -105,7 +116,7 @@ func loadEnvForEnvironment() {
 
 func setupRoutes(r *gin.Engine, userHandler *handlers.UserHandler,
 	courtHandler *handlers.CourtHandler, bulletinHandler *handlers.BulletinHandler,
-	eventHandler *handlers.EventHandler, communityHandler *handlers.CommunityHandler) {
+	eventHandler *handlers.EventHandler, communityHandler *handlers.CommunityHandler, jwtManager *utils.JWTManager) {
 	// API routes
 	api := r.Group("/api")
 	{
@@ -121,62 +132,86 @@ func setupRoutes(r *gin.Engine, userHandler *handlers.UserHandler,
 		{
 			userRoutes.POST("/register", userHandler.RegisterUser)
 			userRoutes.POST("/login", userHandler.LoginUser)
-			userRoutes.GET("/profile/:id", authMiddleware(), userHandler.GetUserProfile)
-			userRoutes.PUT("/profile", authMiddleware(), userHandler.UpdateUserProfile)
-			userRoutes.GET("/nearby", authMiddleware(), userHandler.GetNearbyUsers)
-			userRoutes.POST("/like/:id", authMiddleware(), userHandler.LikeUser)
+			userRoutes.GET("/profile/:id", authMiddleware(jwtManager), userHandler.GetUserProfile)
+			userRoutes.PUT("/profile", authMiddleware(jwtManager), userHandler.UpdateUserProfile)
+			userRoutes.GET("/nearby", authMiddleware(jwtManager), userHandler.GetNearbyUsers)
+			userRoutes.POST("/like/:id", authMiddleware(jwtManager), userHandler.LikeUser)
 		}
 
 		// Courts routes
 		courtRoutes := api.Group("/courts")
 		{
-			courtRoutes.GET("/", authMiddleware(), courtHandler.GetCourts)
-			courtRoutes.GET("/:id", authMiddleware(), courtHandler.GetCourtDetails)
-			courtRoutes.POST("/checkin/:id", authMiddleware(), courtHandler.CheckInToCourt)
-			courtRoutes.POST("/checkout/:id", authMiddleware(), courtHandler.CheckOutFromCourt)
+			courtRoutes.GET("/", authMiddleware(jwtManager), courtHandler.GetCourts)
+			courtRoutes.GET("/:id", authMiddleware(jwtManager), courtHandler.GetCourtDetails)
+			courtRoutes.POST("/checkin/:id", authMiddleware(jwtManager), courtHandler.CheckInToCourt)
+			courtRoutes.POST("/checkout/:id", authMiddleware(jwtManager), courtHandler.CheckOutFromCourt)
 		}
 
 		// Events routes
 		eventRoutes := api.Group("/events")
 		{
-			eventRoutes.GET("/", authMiddleware(), eventHandler.GetEvents)
-			eventRoutes.GET("/:id", authMiddleware(), eventHandler.GetEventDetails)
-			eventRoutes.POST("/", authMiddleware(), eventHandler.CreateEvent)
-			eventRoutes.POST("/:id/rsvp", authMiddleware(), eventHandler.RSVPToEvent)
+			eventRoutes.GET("/", authMiddleware(jwtManager), eventHandler.GetEvents)
+			eventRoutes.GET("/:id", authMiddleware(jwtManager), eventHandler.GetEventDetails)
+			eventRoutes.POST("/", authMiddleware(jwtManager), eventHandler.CreateEvent)
+			eventRoutes.POST("/:id/rsvp", authMiddleware(jwtManager), eventHandler.RSVPToEvent)
 		}
 
 		// Looking-to-play bulletin routes
 		bulletinRoutes := api.Group("/bulletins")
 		{
-			bulletinRoutes.GET("/", authMiddleware(), bulletinHandler.GetBulletins)
-			bulletinRoutes.POST("/", authMiddleware(), bulletinHandler.CreateBulletin)
-			bulletinRoutes.POST("/:id/respond", authMiddleware(), bulletinHandler.RespondToBulletin)
-			bulletinRoutes.PUT("/:id/response/:response_id", authMiddleware(), bulletinHandler.UpdateBulletinResponseStatus)
-			bulletinRoutes.DELETE("/:id", authMiddleware(), bulletinHandler.DeleteBulletin)
+			bulletinRoutes.GET("/", authMiddleware(jwtManager), bulletinHandler.GetBulletins)
+			bulletinRoutes.POST("/", authMiddleware(jwtManager), bulletinHandler.CreateBulletin)
+			bulletinRoutes.POST("/:id/respond", authMiddleware(jwtManager), bulletinHandler.RespondToBulletin)
+			bulletinRoutes.PUT("/:id/response/:response_id", authMiddleware(jwtManager), bulletinHandler.UpdateBulletinResponseStatus)
+			bulletinRoutes.DELETE("/:id", authMiddleware(jwtManager), bulletinHandler.DeleteBulletin)
 		}
 
 		// Community routes
 		communityRoutes := api.Group("/communities")
 		{
-			communityRoutes.GET("/", authMiddleware(), communityHandler.GetCommunities)
-			communityRoutes.GET("/:id", authMiddleware(), communityHandler.GetCommunityDetails)
-			communityRoutes.POST("/", authMiddleware(), communityHandler.CreateCommunity)
-			communityRoutes.POST("/:id/join", authMiddleware(), communityHandler.JoinCommunity)
-			communityRoutes.POST("/:id/message", authMiddleware(), communityHandler.PostCommunityMessage)
-			communityRoutes.GET("/:id/messages", authMiddleware(), communityHandler.GetCommunityMessages)
+			communityRoutes.GET("/", authMiddleware(jwtManager), communityHandler.GetCommunities)
+			communityRoutes.GET("/:id", authMiddleware(jwtManager), communityHandler.GetCommunityDetails)
+			communityRoutes.POST("/", authMiddleware(jwtManager), communityHandler.CreateCommunity)
+			communityRoutes.POST("/:id/join", authMiddleware(jwtManager), communityHandler.JoinCommunity)
+			communityRoutes.POST("/:id/message", authMiddleware(jwtManager), communityHandler.PostCommunityMessage)
+			communityRoutes.GET("/:id/messages", authMiddleware(jwtManager), communityHandler.GetCommunityMessages)
 		}
 	}
 }
 
-// Mock authentication middleware for development
-func authMiddleware() gin.HandlerFunc {
+// Authentication middleware using JWT
+func authMiddleware(jwtManager *utils.JWTManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// In a real app, this would validate the JWT token from the Authorization header
-		// and set user information in the context
+		// Get the Authorization header
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
+			c.Abort()
+			return
+		}
 
-		// For development, we'll just set mock user data
-		c.Set("userID", "00000000-0000-0000-0000-000000000000")
-		c.Set("userName", "Test User")
+		// Check if it starts with "Bearer "
+		if len(authHeader) < 7 || authHeader[:7] != "Bearer " {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header format"})
+			c.Abort()
+			return
+		}
+
+		// Extract the token
+		tokenString := authHeader[7:]
+
+		// Validate the token
+		claims, err := jwtManager.ValidateToken(tokenString)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+			c.Abort()
+			return
+		}
+
+		// Set user information in the context
+		c.Set("userID", claims.UserID.String())
+		c.Set("userName", claims.Name)
+		c.Set("userEmail", claims.Email)
 
 		c.Next()
 	}

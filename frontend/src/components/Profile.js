@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useCallback } from 'react';
+import api from '../api/config';
 import './Profile.css';
 
 const Profile = () => {
@@ -13,11 +13,7 @@ const Profile = () => {
   const skillLevels = ['2.0', '2.5', '3.0', '3.5', '4.0', '4.5', '5.0', '5.5+'];
   const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-  useEffect(() => {
-    fetchUserProfile();
-  }, []);
-
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
     setLoading(true);
     try {
       // Get user ID from localStorage
@@ -26,7 +22,7 @@ const Profile = () => {
         throw new Error('User not authenticated');
       }
 
-      const response = await axios.get(`/api/users/profile/${user.id}`);
+      const response = await api.get(`/users/profile/${user.id}`);
       setProfile(response.data);
       
       // Initialize form data with current profile
@@ -42,7 +38,11 @@ const Profile = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, [fetchUserProfile]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -102,7 +102,7 @@ const Profile = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put('/api/users/profile', formData);
+      await api.put('/users/profile', formData);
       
       // Update local profile
       setProfile(formData);

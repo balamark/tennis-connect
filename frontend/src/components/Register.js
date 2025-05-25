@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/config';
 import './Auth.css';
 
 const Register = () => {
@@ -9,7 +9,7 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    skillLevel: '3.0',
+    skillLevel: '',
     gameStyles: [],
     gender: '',
     isNewToArea: false
@@ -18,7 +18,7 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   
-  const gameStyles = ['Singles', 'Doubles', 'Competitive', 'Social'];
+  const gameStyleOptions = ['Singles', 'Doubles', 'Social', 'Competitive'];
   const skillLevels = ['2.0', '2.5', '3.0', '3.5', '4.0', '4.5', '5.0', '5.5+'];
 
   const handleChange = (e) => {
@@ -74,7 +74,7 @@ const Register = () => {
     };
 
     try {
-      await axios.post('/api/users/register', userData);
+      await api.post('/users/register', userData);
       alert('Registration successful! Please sign in.');
       navigate('/login');
     } catch (err) {
@@ -179,7 +179,7 @@ const Register = () => {
           <div className="form-group">
             <label>Game Styles:</label>
             <div className="checkbox-group">
-              {gameStyles.map(style => (
+              {gameStyleOptions.map(style => (
                 <label key={style} className="checkbox-label">
                   <input
                     type="checkbox"

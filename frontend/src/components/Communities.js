@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import useFetch from '../hooks/useFetch';
 import './Communities.css';
 
 const Communities = () => {
-  const [communities, setCommunities] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [selectedCommunity, setSelectedCommunity] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -17,53 +15,126 @@ const Communities = () => {
 
   const communityTypes = ['General', 'Women-only', 'Beginners', 'Location-based', 'Advanced'];
 
-  useEffect(() => {
-    fetchCommunities();
-  }, []);
-
-  useEffect(() => {
-    if (selectedCommunity) {
-      fetchCommunityMessages(selectedCommunity.id);
+  // Mock data for development
+  const getMockCommunities = () => [
+    {
+      id: '1',
+      name: 'SF Tennis Players',
+      description: 'A community for all tennis players in San Francisco',
+      location: {
+        city: 'San Francisco',
+        state: 'CA'
+      },
+      type: 'General',
+      members: [
+        {
+          id: 'member1',
+          userName: 'Admin User',
+          role: 'Admin',
+          joinedAt: new Date(Date.now() - 30 * 24 * 3600000).toISOString() // 30 days ago
+        },
+        {
+          id: 'member2',
+          userName: 'Regular User',
+          role: 'Member',
+          joinedAt: new Date(Date.now() - 15 * 24 * 3600000).toISOString() // 15 days ago
+        }
+      ],
+      createdAt: new Date(Date.now() - 30 * 24 * 3600000).toISOString() // 30 days ago
+    },
+    {
+      id: '2',
+      name: 'Women\'s Tennis SF',
+      description: 'A community for women tennis players in San Francisco',
+      location: {
+        city: 'San Francisco',
+        state: 'CA'
+      },
+      type: 'Women-only',
+      members: [
+        {
+          id: 'member3',
+          userName: 'Admin User',
+          role: 'Admin',
+          joinedAt: new Date(Date.now() - 45 * 24 * 3600000).toISOString() // 45 days ago
+        }
+      ],
+      createdAt: new Date(Date.now() - 45 * 24 * 3600000).toISOString() // 45 days ago
+    },
+    {
+      id: '3',
+      name: 'Tennis Beginners Bay Area',
+      description: 'A supportive community for beginning tennis players',
+      location: {
+        city: 'San Francisco',
+        state: 'CA'
+      },
+      type: 'Beginners',
+      members: [
+        {
+          id: 'member4',
+          userName: 'Admin User',
+          role: 'Admin',
+          joinedAt: new Date(Date.now() - 60 * 24 * 3600000).toISOString() // 60 days ago
+        }
+      ],
+      createdAt: new Date(Date.now() - 60 * 24 * 3600000).toISOString() // 60 days ago
     }
-  }, [selectedCommunity]);
+  ];
 
-  const fetchCommunities = async () => {
-    setLoading(true);
-    try {
-      // Build query parameters
-      let queryParams = new URLSearchParams();
-
-      if (filters.type) {
-        queryParams.append('type', filters.type);
-      }
-
-      if (filters.radius) {
-        queryParams.append('radius', filters.radius);
-      }
-
-      // Get user's location to find nearby communities
-      try {
-        const position = await getCurrentPosition();
-        queryParams.append('latitude', position.coords.latitude);
-        queryParams.append('longitude', position.coords.longitude);
-      } catch (error) {
-        console.error("Couldn't get location, using default search area");
-      }
-
-      const response = await axios.get(`/api/communities?${queryParams}`);
-      setCommunities(response.data.communities || []);
-    } catch (err) {
-      console.error('Error fetching communities:', err);
-      setError('Failed to load communities. Please try again later.');
-      
-      // For development: use mock data if API call fails
-      setCommunities(getMockCommunities());
-    } finally {
-      setLoading(false);
+  const getMockMessages = () => [
+    {
+      id: 'msg1',
+      userName: 'Admin User',
+      content: 'Welcome to the community! This is a place to discuss all things tennis in the Bay Area.',
+      createdAt: new Date(Date.now() - 29 * 24 * 3600000).toISOString() // 29 days ago
+    },
+    {
+      id: 'msg2',
+      userName: 'Regular User',
+      content: 'Thanks for creating this group! Is anyone free for a hit this weekend at Golden Gate Park?',
+      createdAt: new Date(Date.now() - 14 * 24 * 3600000).toISOString() // 14 days ago
+    },
+    {
+      id: 'msg3',
+      userName: 'Admin User',
+      content: 'I\'m free on Saturday morning if anyone wants to play!',
+      createdAt: new Date(Date.now() - 7 * 24 * 3600000).toISOString() // 7 days ago
     }
-  };
+  ];
 
-  const fetchCommunityMessages = async (communityId) => {
+  // Define the fetch function for communities
+  const fetchCommunitiesFunction = useCallback(async (location) => {
+    // Build query parameters
+    let queryParams = new URLSearchParams();
+
+    if (filters.type) {
+      queryParams.append('type', filters.type);
+    }
+
+    if (filters.radius) {
+      queryParams.append('radius', filters.radius);
+    }
+
+    queryParams.append('latitude', location.latitude);
+    queryParams.append('longitude', location.longitude);
+
+    const response = await axios.get(`/api/communities?${queryParams}`);
+    return response.data.communities || [];
+  }, [filters.type, filters.radius]);
+
+  // Use the custom hook for communities
+  const { data: communities, loading, error, refetch } = useFetch(
+    fetchCommunitiesFunction,
+    [filters.type, filters.radius],
+    {
+      getMockData: getMockCommunities,
+      useLocation: true,
+      autoFetch: true
+    }
+  );
+
+  const fetchCommunityMessages = useCallback(async (communityId) => {
     setMessagesLoading(true);
     try {
       const response = await axios.get(`/api/communities/${communityId}/messages`);
@@ -75,22 +146,15 @@ const Communities = () => {
     } finally {
       setMessagesLoading(false);
     }
-  };
+  }, []);
 
-  const getCurrentPosition = () => {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error('Geolocation is not supported by your browser'));
-        return;
-      }
+  useEffect(() => {
+    if (selectedCommunity) {
+      fetchCommunityMessages(selectedCommunity.id);
+    }
+  }, [selectedCommunity, fetchCommunityMessages]);
 
-      navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 0
-      });
-    });
-  };
+
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -98,7 +162,7 @@ const Communities = () => {
   };
 
   const handleApplyFilters = () => {
-    fetchCommunities();
+    refetch();
   };
 
   const handleCommunitySelect = (community) => {
@@ -196,94 +260,6 @@ const Communities = () => {
     const userInfo = JSON.parse(localStorage.getItem('user')) || { name: 'Current User' };
     return community.members.some(member => member.userName === userInfo.name);
   };
-
-  // Mock data for development
-  const getMockCommunities = () => [
-    {
-      id: '1',
-      name: 'SF Tennis Players',
-      description: 'A community for all tennis players in San Francisco',
-      location: {
-        city: 'San Francisco',
-        state: 'CA'
-      },
-      type: 'General',
-      members: [
-        {
-          id: 'member1',
-          userName: 'Admin User',
-          role: 'Admin',
-          joinedAt: new Date(Date.now() - 30 * 24 * 3600000).toISOString() // 30 days ago
-        },
-        {
-          id: 'member2',
-          userName: 'Regular User',
-          role: 'Member',
-          joinedAt: new Date(Date.now() - 15 * 24 * 3600000).toISOString() // 15 days ago
-        }
-      ],
-      createdAt: new Date(Date.now() - 30 * 24 * 3600000).toISOString() // 30 days ago
-    },
-    {
-      id: '2',
-      name: 'Women\'s Tennis SF',
-      description: 'A community for women tennis players in San Francisco',
-      location: {
-        city: 'San Francisco',
-        state: 'CA'
-      },
-      type: 'Women-only',
-      members: [
-        {
-          id: 'member3',
-          userName: 'Admin User',
-          role: 'Admin',
-          joinedAt: new Date(Date.now() - 45 * 24 * 3600000).toISOString() // 45 days ago
-        }
-      ],
-      createdAt: new Date(Date.now() - 45 * 24 * 3600000).toISOString() // 45 days ago
-    },
-    {
-      id: '3',
-      name: 'Tennis Beginners Bay Area',
-      description: 'A supportive community for beginning tennis players',
-      location: {
-        city: 'San Francisco',
-        state: 'CA'
-      },
-      type: 'Beginners',
-      members: [
-        {
-          id: 'member4',
-          userName: 'Admin User',
-          role: 'Admin',
-          joinedAt: new Date(Date.now() - 60 * 24 * 3600000).toISOString() // 60 days ago
-        }
-      ],
-      createdAt: new Date(Date.now() - 60 * 24 * 3600000).toISOString() // 60 days ago
-    }
-  ];
-
-  const getMockMessages = () => [
-    {
-      id: 'msg1',
-      userName: 'Admin User',
-      content: 'Welcome to the community! This is a place to discuss all things tennis in the Bay Area.',
-      createdAt: new Date(Date.now() - 29 * 24 * 3600000).toISOString() // 29 days ago
-    },
-    {
-      id: 'msg2',
-      userName: 'Regular User',
-      content: 'Thanks for creating this group! Is anyone free for a hit this weekend at Golden Gate Park?',
-      createdAt: new Date(Date.now() - 14 * 24 * 3600000).toISOString() // 14 days ago
-    },
-    {
-      id: 'msg3',
-      userName: 'Admin User',
-      content: 'I\'m free on Saturday morning if anyone wants to play!',
-      createdAt: new Date(Date.now() - 7 * 24 * 3600000).toISOString() // 7 days ago
-    }
-  ];
 
   if (loading) {
     return <div className="loading">Loading communities...</div>;

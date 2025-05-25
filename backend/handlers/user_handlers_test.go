@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/user/tennis-connect/models"
+	"github.com/user/tennis-connect/utils"
 )
 
 // Mock user repository for testing
@@ -67,6 +68,13 @@ func (m *MockUserRepository) VerifyPassword(ctx context.Context, email, password
 func setupTestRouter(userHandler *UserHandler) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
+
+	// Set up JWT manager for testing
+	jwtManager := utils.NewJWTManager("test-secret", 60)
+	router.Use(func(c *gin.Context) {
+		c.Set("jwtManager", jwtManager)
+		c.Next()
+	})
 
 	router.POST("/api/users/register", userHandler.RegisterUser)
 	router.POST("/api/users/login", userHandler.LoginUser)

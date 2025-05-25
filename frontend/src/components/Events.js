@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import './Events.css';
 
@@ -19,11 +19,7 @@ const Events = () => {
   const eventTypes = ['Open Rally', 'Tournament', 'Clinic', 'Doubles', 'Singles'];
   const skillLevels = ['All Levels', 'Beginner', 'Intermediate', 'Advanced'];
 
-  useEffect(() => {
-    fetchEvents();
-  }, []);
-
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     setLoading(true);
     try {
       // Build query parameters
@@ -49,14 +45,18 @@ const Events = () => {
         queryParams.append('end_date', filters.endDate);
       }
 
-      // Get user's location to find nearby events
+      // Get user's location to find nearby events or use default San Francisco location
       try {
         const position = await getCurrentPosition();
         queryParams.append('latitude', position.coords.latitude);
         queryParams.append('longitude', position.coords.longitude);
         queryParams.append('radius', '25'); // 25 miles radius
       } catch (error) {
-        console.error("Couldn't get location, using default search area");
+        console.warn("Couldn't get location, using default San Francisco location");
+        // Default to San Francisco coordinates
+        queryParams.append('latitude', '37.7749');
+        queryParams.append('longitude', '-122.4194');
+        queryParams.append('radius', '25');
       }
 
       const response = await axios.get(`/api/events?${queryParams}`);
@@ -90,7 +90,11 @@ const Events = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters.skillLevel, filters.eventType, filters.newcomerFriendly, filters.startDate, filters.endDate]);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   const getCurrentPosition = () => {
     return new Promise((resolve, reject) => {

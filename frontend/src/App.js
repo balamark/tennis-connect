@@ -4,7 +4,7 @@ import './App.css';
 
 // Import components
 import NearbyPlayers from './components/NearbyPlayers';
-import CourtFinder from './components/CourtFinder';
+import TennisCourts from './components/TennisCourts';
 import PlayBulletin from './components/PlayBulletin';
 import Events from './components/Events';
 import Communities from './components/Communities';
@@ -14,7 +14,6 @@ import Profile from './components/Profile';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState(null);
 
   useEffect(() => {
     // Check if user is logged in (token exists in localStorage)
@@ -23,7 +22,6 @@ function App() {
     
     if (token && userData) {
       setIsAuthenticated(true);
-      setUser(JSON.parse(userData));
     }
   }, []);
 
@@ -31,7 +29,6 @@ function App() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setIsAuthenticated(false);
-    setUser(null);
   };
 
   return (
@@ -66,7 +63,7 @@ function App() {
         <main className="app-content">
           <Routes>
             <Route path="/" element={<NearbyPlayers />} />
-            <Route path="/courts" element={<CourtFinder />} />
+            <Route path="/courts" element={<TennisCourts />} />
             <Route path="/bulletins" element={<PlayBulletin />} />
             <Route path="/events" element={<Events />} />
             <Route path="/communities" element={<Communities />} />

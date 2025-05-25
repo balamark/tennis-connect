@@ -1,0 +1,399 @@
+# =============================================================================
+# TENNIS CONNECT - GITIGNORE
+# =============================================================================
+# Comprehensive .gitignore for Go backend + React frontend + Docker setup
+# Last updated: 2025
+
+# =============================================================================
+# OPERATING SYSTEM FILES
+# =============================================================================
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# =============================================================================
+# GO BACKEND
+# =============================================================================
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/backend/bin/
+/backend/tmp/
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.txt
+coverage.html
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Air live reload tool
+tmp/
+.air.toml
+
+# Delve debugger
+__debug_bin
+
+# =============================================================================
+# REACT FRONTEND
+# =============================================================================
+
+# Dependencies
+/frontend/node_modules/
+/frontend/.pnp
+/frontend/.pnp.js
+
+# Production builds
+/frontend/build/
+/frontend/dist/
+
+# Runtime data
+/frontend/pids
+/frontend/*.pid
+/frontend/*.seed
+/frontend/*.pid.lock
+
+# Coverage directory used by tools like istanbul
+/frontend/coverage/
+/frontend/.nyc_output
+
+# ESLint cache
+/frontend/.eslintcache
+
+# Optional npm cache directory
+/frontend/.npm
+
+# Optional eslint cache
+/frontend/.eslintcache
+
+# Microbundle cache
+/frontend/.rpt2_cache/
+/frontend/.rts2_cache_cjs/
+/frontend/.rts2_cache_es/
+/frontend/.rts2_cache_umd/
+
+# Optional REPL history
+/frontend/.node_repl_history
+
+# Output of 'npm pack'
+/frontend/*.tgz
+
+# Yarn Integrity file
+/frontend/.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+/frontend/.cache
+/frontend/.parcel-cache
+
+# Next.js build output
+/frontend/.next
+
+# Nuxt.js build / generate output
+/frontend/.nuxt
+/frontend/dist
+
+# Storybook build outputs
+/frontend/.out
+/frontend/.storybook-out
+
+# Temporary folders
+/frontend/tmp/
+/frontend/temp/
+
+# =============================================================================
+# ENVIRONMENT & CONFIGURATION
+# =============================================================================
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+
+# Configuration files with sensitive data
+config/local.yaml
+config/production.yaml
+config/staging.yaml
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+
+# =============================================================================
+# DATABASE
+# =============================================================================
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+/database/data/
+/postgres-data/
+/mysql-data/
+
+# Database dumps
+*.sql
+*.dump
+
+# =============================================================================
+# DOCKER
+# =============================================================================
+
+# Docker override files
+docker-compose.override.yml
+docker-compose.local.yml
+
+# Docker volumes
+/volumes/
+
+# =============================================================================
+# LOGS
+# =============================================================================
+
+# Log files
+*.log
+logs/
+/backend/logs/
+/frontend/logs/
+
+# Runtime logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# =============================================================================
+# IDE & EDITOR FILES
+# =============================================================================
+
+# Visual Studio Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Atom
+.atom/
+
+# =============================================================================
+# TESTING
+# =============================================================================
+
+# Test coverage
+coverage/
+*.cover
+*.py,cover
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.coveragerc
+
+# Jest
+/frontend/coverage/
+
+# =============================================================================
+# BUILD TOOLS & PACKAGE MANAGERS
+# =============================================================================
+
+# npm
+node_modules/
+npm-debug.log*
+.npm
+
+# Yarn
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# pnpm
+.pnpm-debug.log*
+
+# Bower
+bower_components/
+
+# =============================================================================
+# SECURITY & SECRETS
+# =============================================================================
+
+# API keys and secrets
+secrets/
+*.secret
+.secrets
+api-keys.json
+
+# JWT keys
+jwt-*.key
+*.jwt
+
+# SSL certificates
+ssl/
+certs/
+
+# =============================================================================
+# TEMPORARY & CACHE FILES
+# =============================================================================
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
+
+# Cache directories
+.cache/
+cache/
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# =============================================================================
+# DOCUMENTATION BUILD
+# =============================================================================
+
+# Generated documentation
+docs/_build/
+docs/build/
+site/
+
+# =============================================================================
+# DEPLOYMENT
+# =============================================================================
+
+# Deployment scripts with sensitive data
+deploy.sh
+deployment/
+
+# Kubernetes secrets
+k8s-secrets.yaml
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# =============================================================================
+# MONITORING & PROFILING
+# =============================================================================
+
+# Profiling data
+*.prof
+*.pprof
+
+# Monitoring data
+metrics/
+traces/
+
+# =============================================================================
+# CUSTOM PROJECT SPECIFIC
+# =============================================================================
+
+# Migration files with sensitive data (keep structure, ignore data)
+/backend/migrations/*_data.sql
+
+# Uploaded files (if any)
+uploads/
+static/uploads/
+
+# Generated API documentation
+api-docs/
+
+# Local development scripts
+dev-*.sh
+local-*.sh
+
+# =============================================================================
+# KEEP THESE FILES (EXPLICIT INCLUSIONS)
+# =============================================================================
+
+# Keep important config templates
+!config/config.example.yaml
+!.env.example
+!docker-compose.example.yml
+
+# Keep empty directories with .gitkeep
+!.gitkeep
+
+# Keep documentation
+!README.md
+!CHANGELOG.md
+!LICENSE
+!docs/
+
+# Keep CI/CD configurations
+!.github/
+!.gitlab-ci.yml
+!.travis.yml
+!.circleci/ 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/config';
 import './Auth.css';
 
 const Login = ({ setIsAuthenticated }) => {
@@ -26,7 +26,7 @@ const Login = ({ setIsAuthenticated }) => {
     setError('');
 
     try {
-      const response = await axios.post('/api/users/login', formData);
+      const response = await api.post('/users/login', formData);
       
       // Store token and user info
       localStorage.setItem('token', response.data.token);
