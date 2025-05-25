@@ -126,6 +126,10 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Use
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 
+	// Initialize empty slices to avoid nil pointer errors
+	user.GameStyles = make([]string, 0)
+	user.PreferredTimes = make([]models.TimeSlot, 0)
+
 	// Query game styles
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT gs.name
@@ -309,7 +313,14 @@ func (r *UserRepository) GetNearbyUsers(ctx context.Context, latitude, longitude
 	defer rows.Close()
 
 	// Process results
-	var userIDs []uuid.UUID
+	type userWithDistance struct {
+		ID       uuid.UUID
+		Distance float64
+	}
+
+	var usersInRange []userWithDistance
+	var allUsers []userWithDistance
+
 	for rows.Next() {
 		var userID uuid.UUID
 		var distance float64
@@ -321,19 +332,38 @@ func (r *UserRepository) GetNearbyUsers(ctx context.Context, latitude, longitude
 		// In production, use proper geospatial calculations
 		distanceMiles := distance * 69.0 // Rough conversion from degrees to miles
 
+		userDist := userWithDistance{ID: userID, Distance: distanceMiles}
+		allUsers = append(allUsers, userDist)
+
 		// Check if within radius
 		if distanceMiles <= radius {
-			userIDs = append(userIDs, userID)
+			usersInRange = append(usersInRange, userDist)
+		}
+	}
+
+	// Determine which users to return
+	var selectedUsers []userWithDistance
+	if len(usersInRange) > 0 {
+		selectedUsers = usersInRange
+	} else if len(allUsers) > 0 {
+		// If no users found within radius, return all users (up to 20) as fallback
+		if len(allUsers) > 20 {
+			selectedUsers = allUsers[:20]
+		} else {
+			selectedUsers = allUsers
 		}
 	}
 
 	// Fetch full user details for filtered users
-	users := make([]*models.User, 0, len(userIDs))
-	for _, id := range userIDs {
-		user, err := r.GetByID(ctx, id)
+	users := make([]*models.User, 0, len(selectedUsers))
+	for _, userDist := range selectedUsers {
+		user, err := r.GetByID(ctx, userDist.ID)
 		if err != nil {
 			continue // Skip failed fetches
 		}
+
+		// Set the distance information
+		user.Distance = userDist.Distance
 
 		// Additional filtering for game styles if needed
 		if gameStyles, ok := filters["gameStyles"].([]string); ok && len(gameStyles) > 0 {

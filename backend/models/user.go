@@ -20,6 +20,7 @@ type User struct {
 	IsVerified     bool       `json:"is_verified"`
 	IsNewToArea    bool       `json:"is_new_to_area"`
 	Gender         string     `json:"gender,omitempty"` // For safety filters
+	Distance       float64    `json:"distance,omitempty"` // Distance in miles (calculated field, not stored in DB)
 	CreatedAt      time.Time  `json:"created_at"`
 	UpdatedAt      time.Time  `json:"updated_at"`
 }

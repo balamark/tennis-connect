@@ -5,6 +5,7 @@ import './NearbyPlayers.css';
 
 const NearbyPlayers = () => {
   const [demoMode, setDemoMode] = useState(true); // Start in demo mode
+  const [metadata, setMetadata] = useState(null); // Store search metadata
   const [filters, setFilters] = useState({
     skillLevel: '',
     gameStyles: [],
@@ -262,7 +263,14 @@ const NearbyPlayers = () => {
     try {
       // Fetch players from API
       const response = await api.get(`/users/nearby?${queryParams}`);
-      return response.data.users || [];
+      const data = response.data;
+      
+      // Store metadata for UI feedback
+      if (data.metadata) {
+        setMetadata(data.metadata);
+      }
+      
+      return data.users || [];
     } catch (error) {
       console.warn('API call failed, falling back to demo data:', error);
       return getMockPlayers();
@@ -484,6 +492,24 @@ const NearbyPlayers = () => {
             {players.length === 0 ? 'No players found' : `${players.length} players found`}
             {demoMode && <span className="demo-indicator"> (Demo Data)</span>}
           </div>
+          
+          {/* Show metadata when available */}
+          {metadata && !demoMode && (
+            <div className="search-metadata">
+              {metadata.showing_fallback && (
+                <div className="fallback-notice">
+                  ⚠️ No players found within {metadata.search_radius} miles. 
+                  Showing {metadata.total_users} players from a wider area - they may be willing to travel!
+                </div>
+              )}
+              {!metadata.showing_fallback && metadata.users_out_of_range > 0 && (
+                <div className="range-info">
+                  📍 {metadata.users_in_range} players within {metadata.search_radius} miles, 
+                  {metadata.users_out_of_range} additional players shown from wider area
+                </div>
+              )}
+            </div>
+          )}
         </div>
         
         <div className="players-list">
@@ -502,7 +528,7 @@ const NearbyPlayers = () => {
                       e.target.src = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
                     }}
                   />
-                  <div className="skill-badge">{player.skillLevel} NTRP</div>
+                  <div className="skill-badge">{player.skillLevel || 'N/A'} NTRP</div>
                 </div>
                 
                 <div className="player-info">
@@ -517,10 +543,15 @@ const NearbyPlayers = () => {
                   
                   <div className="player-details">
                     <div className="detail-item">
-                      <strong>🎾</strong> {player.gameStyles.join(', ')}
+                      <strong>🎾</strong> {player.gameStyles && player.gameStyles.length > 0 ? player.gameStyles.join(', ') : 'Not specified'}
                     </div>
                     <div className="detail-item">
-                      <strong>📍</strong> {player.location.city}, {player.location.state}
+                      <strong>📍</strong> {player.location ? `${player.location.city || 'Unknown'}, ${player.location.state || 'Unknown'}` : 'Location not specified'}
+                      {player.distance && !demoMode && (
+                        <span className={`distance-badge ${player.distance > parseInt(filters.radius) ? 'out-of-range' : 'in-range'}`}>
+                          {player.distance.toFixed(1)} mi
+                        </span>
+                      )}
                     </div>
                   </div>
                   
@@ -533,12 +564,18 @@ const NearbyPlayers = () => {
                   <div className="availability">
                     <h4>Available Times</h4>
                     <ul>
-                      {player.preferredTimes.map((time, index) => (
-                        <li key={index}>
-                          <span className="day">{time.dayOfWeek}</span>
-                          <span className="time">{time.startTime} - {time.endTime}</span>
+                      {player.preferredTimes && player.preferredTimes.length > 0 ? (
+                        player.preferredTimes.map((time, index) => (
+                          <li key={index}>
+                            <span className="day">{time.dayOfWeek || 'Unknown'}</span>
+                            <span className="time">{time.startTime || '00:00'} - {time.endTime || '00:00'}</span>
+                          </li>
+                        ))
+                      ) : (
+                        <li>
+                          <span className="day">No times specified</span>
                         </li>
-                      ))}
+                      )}
                     </ul>
                   </div>
                 </div>

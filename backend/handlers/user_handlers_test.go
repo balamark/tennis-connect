@@ -94,12 +94,21 @@ func TestUserHandler_RegisterUser(t *testing.T) {
 	router := setupTestRouter(userHandler)
 
 	// Test data
-	user := models.User{
-		Email:        "test@example.com",
-		PasswordHash: "password123",
-		Name:         "Test User",
-		SkillLevel:   4.0,
-		GameStyles:   []string{"Singles", "Competitive"},
+	registrationData := map[string]interface{}{
+		"email":       "test@example.com",
+		"password":    "password123",
+		"name":        "Test User",
+		"skillLevel":  4.0,
+		"gameStyles":  []string{"Singles", "Competitive"},
+		"gender":      "Male",
+		"isNewToArea": false,
+		"location": map[string]interface{}{
+			"latitude":  37.7749,
+			"longitude": -122.4194,
+			"zipCode":   "94105",
+			"city":      "San Francisco",
+			"state":     "CA",
+		},
 	}
 
 	// Setup expectations
@@ -108,7 +117,7 @@ func TestUserHandler_RegisterUser(t *testing.T) {
 	})).Return(nil)
 
 	// Create request
-	jsonData, _ := json.Marshal(user)
+	jsonData, _ := json.Marshal(registrationData)
 	req, _ := http.NewRequest("POST", "/api/users/register", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 	resp := httptest.NewRecorder()
@@ -229,7 +238,6 @@ func TestUserHandler_UpdateUserProfile(t *testing.T) {
 	// Setup mock repository
 	mockRepo := new(MockUserRepository)
 	userHandler := NewUserHandler(mockRepo)
-	router := setupTestRouter(userHandler)
 
 	// Test data
 	userID := uuid.New()
@@ -381,4 +389,147 @@ func TestUserHandler_LikeUser(t *testing.T) {
 	assert.Equal(t, true, response["success"])
 	assert.Contains(t, response, "is_match")
 	assert.Equal(t, true, response["is_match"])
+}
+
+// TestUserHandler_GetNearbyUsers_WithMetadata tests the GetNearbyUsers method with metadata response
+func TestUserHandler_GetNearbyUsers_WithMetadata(t *testing.T) {
+	// Setup mock repository
+	mockRepo := new(MockUserRepository)
+	userHandler := NewUserHandler(mockRepo)
+
+	// Test data - users with distance information
+	userID := uuid.New()
+	nearbyUsers := []*models.User{
+		{
+			ID:         uuid.New(),
+			Name:       "Close User",
+			SkillLevel: 4.0,
+			GameStyles: []string{"Singles"},
+			Gender:     "Male",
+			Distance:   5.2, // Within 10-mile radius
+		},
+		{
+			ID:         uuid.New(),
+			Name:       "Far User",
+			SkillLevel: 4.0,
+			GameStyles: []string{"Doubles"},
+			Gender:     "Female",
+			Distance:   15.8, // Outside 10-mile radius
+		},
+	}
+
+	// Setup router with authentication middleware simulation
+	router := gin.New()
+	router.GET("/api/users/nearby", func(c *gin.Context) {
+		// Simulate authentication middleware
+		c.Set("userID", userID.String())
+		userHandler.GetNearbyUsers(c)
+	})
+
+	// Setup expectations
+	mockRepo.On("GetNearbyUsers", mock.Anything, mock.AnythingOfType("float64"), mock.AnythingOfType("float64"), mock.AnythingOfType("float64"), mock.Anything).
+		Return(nearbyUsers, nil)
+
+	// Create request
+	req, _ := http.NewRequest("GET", "/api/users/nearby?latitude=37.7749&longitude=-122.4194&radius=10", nil)
+	resp := httptest.NewRecorder()
+
+	// Perform request
+	router.ServeHTTP(resp, req)
+
+	// Assert
+	assert.Equal(t, http.StatusOK, resp.Code)
+	mockRepo.AssertExpectations(t)
+
+	// Verify response structure
+	var response map[string]interface{}
+	err := json.Unmarshal(resp.Body.Bytes(), &response)
+	require.NoError(t, err)
+
+	// Check that response contains both users and metadata
+	assert.Contains(t, response, "users")
+	assert.Contains(t, response, "metadata")
+
+	// Verify metadata structure
+	metadata, ok := response["metadata"].(map[string]interface{})
+	assert.True(t, ok, "Metadata should be a map")
+	assert.Contains(t, metadata, "total_users")
+	assert.Contains(t, metadata, "users_in_range")
+	assert.Contains(t, metadata, "users_out_of_range")
+	assert.Contains(t, metadata, "search_radius")
+	assert.Contains(t, metadata, "showing_fallback")
+
+	// Verify metadata values
+	assert.Equal(t, float64(2), metadata["total_users"])
+	assert.Equal(t, float64(1), metadata["users_in_range"])
+	assert.Equal(t, float64(1), metadata["users_out_of_range"])
+	assert.Equal(t, float64(10), metadata["search_radius"])
+	assert.Equal(t, false, metadata["showing_fallback"]) // Not fallback since we have users in range
+}
+
+// TestUserHandler_GetNearbyUsers_FallbackScenario tests the fallback scenario
+func TestUserHandler_GetNearbyUsers_FallbackScenario(t *testing.T) {
+	// Setup mock repository
+	mockRepo := new(MockUserRepository)
+	userHandler := NewUserHandler(mockRepo)
+
+	// Test data - all users outside radius (fallback scenario)
+	userID := uuid.New()
+	fallbackUsers := []*models.User{
+		{
+			ID:         uuid.New(),
+			Name:       "Far User 1",
+			SkillLevel: 4.0,
+			GameStyles: []string{"Singles"},
+			Gender:     "Male",
+			Distance:   25.3, // Outside 10-mile radius
+		},
+		{
+			ID:         uuid.New(),
+			Name:       "Far User 2",
+			SkillLevel: 3.5,
+			GameStyles: []string{"Doubles"},
+			Gender:     "Female",
+			Distance:   18.7, // Outside 10-mile radius
+		},
+	}
+
+	// Setup router with authentication middleware simulation
+	router := gin.New()
+	router.GET("/api/users/nearby", func(c *gin.Context) {
+		// Simulate authentication middleware
+		c.Set("userID", userID.String())
+		userHandler.GetNearbyUsers(c)
+	})
+
+	// Setup expectations
+	mockRepo.On("GetNearbyUsers", mock.Anything, mock.AnythingOfType("float64"), mock.AnythingOfType("float64"), mock.AnythingOfType("float64"), mock.Anything).
+		Return(fallbackUsers, nil)
+
+	// Create request
+	req, _ := http.NewRequest("GET", "/api/users/nearby?latitude=37.7749&longitude=-122.4194&radius=10", nil)
+	resp := httptest.NewRecorder()
+
+	// Perform request
+	router.ServeHTTP(resp, req)
+
+	// Assert
+	assert.Equal(t, http.StatusOK, resp.Code)
+	mockRepo.AssertExpectations(t)
+
+	// Verify response structure
+	var response map[string]interface{}
+	err := json.Unmarshal(resp.Body.Bytes(), &response)
+	require.NoError(t, err)
+
+	// Verify metadata for fallback scenario
+	metadata, ok := response["metadata"].(map[string]interface{})
+	assert.True(t, ok, "Metadata should be a map")
+
+	// Verify fallback metadata values
+	assert.Equal(t, float64(2), metadata["total_users"])
+	assert.Equal(t, float64(0), metadata["users_in_range"])
+	assert.Equal(t, float64(2), metadata["users_out_of_range"])
+	assert.Equal(t, float64(10), metadata["search_radius"])
+	assert.Equal(t, true, metadata["showing_fallback"]) // Should be true since no users in range
 }

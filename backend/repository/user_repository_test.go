@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/google/uuid"
@@ -323,12 +324,19 @@ func TestUserRepository_GetNearbyUsers(t *testing.T) {
 	assert.NoError(t, err, "GetNearbyUsers should not return an error")
 	assert.Equal(t, 2, len(users), "Should find 2 nearby users within 10 miles")
 
-	// Test - filter by skill level
+	// Test - filter by skill level (should find users within 0.5 range)
 	filters["skillLevel"] = float32(4.0)
 	users, err = repo.GetNearbyUsers(ctx, mainUser.Location.Latitude, mainUser.Location.Longitude, 10, filters)
 	assert.NoError(t, err, "GetNearbyUsers with skill filter should not return an error")
-	assert.Equal(t, 1, len(users), "Should find 1 nearby user with skill level 4.0")
-	assert.Equal(t, "Nearby User 2", users[0].Name, "Should find the user with matching skill level")
+	assert.Equal(t, 2, len(users), "Should find 2 nearby users within skill level range (3.5-4.5)")
+	// Check that we found users within the skill range
+	foundInRange := 0
+	for _, user := range users {
+		if user.SkillLevel >= 3.5 && user.SkillLevel <= 4.5 {
+			foundInRange++
+		}
+	}
+	assert.Equal(t, 2, foundInRange, "Should find 2 users within skill level range")
 
 	// Test - filter by gender
 	filters = map[string]interface{}{
@@ -394,4 +402,212 @@ func TestUserRepository_VerifyPassword(t *testing.T) {
 	assert.NoError(t, err, "VerifyPassword should not return an error for non-existent user")
 	assert.False(t, valid, "Password should be invalid for non-existent user")
 	assert.Nil(t, retrievedUser, "User should not be returned")
+}
+
+// TestUserRepository_GetNearbyUsers_FallbackBehavior tests the fallback behavior when no users are found within radius
+func TestUserRepository_GetNearbyUsers_FallbackBehavior(t *testing.T) {
+	// Skip if not in test environment
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	// Setup
+	db := setupTestDB(t)
+	defer db.Close()
+
+	// Clear any existing test data
+	clearTestData(t, db)
+
+	repo := NewUserRepository(db)
+	ctx := context.Background()
+
+	// Create main user in San Francisco
+	mainUser := &models.User{
+		Email:        "main@fallback.com",
+		PasswordHash: "password123",
+		Name:         "Main User",
+		SkillLevel:   4.0,
+		GameStyles:   []string{"Singles", "Competitive"},
+		Gender:       "Male",
+		Location: models.Location{
+			Latitude:  37.7749, // San Francisco
+			Longitude: -122.4194,
+			ZipCode:   "94105",
+			City:      "San Francisco",
+			State:     "CA",
+		},
+	}
+	err := repo.Create(ctx, mainUser)
+	require.NoError(t, err, "Failed to create main user")
+
+	// Create users very far away (different continents)
+	farUsers := []*models.User{
+		{
+			Email:        "tokyo@fallback.com",
+			PasswordHash: "password123",
+			Name:         "Tokyo User",
+			SkillLevel:   4.0,
+			GameStyles:   []string{"Singles", "Competitive"},
+			Gender:       "Male",
+			Location: models.Location{
+				Latitude:  35.6762, // Tokyo, Japan
+				Longitude: 139.6503,
+				ZipCode:   "100-0001",
+				City:      "Tokyo",
+				State:     "Tokyo",
+			},
+		},
+		{
+			Email:        "london@fallback.com",
+			PasswordHash: "password123",
+			Name:         "London User",
+			SkillLevel:   4.0,
+			GameStyles:   []string{"Singles", "Competitive"},
+			Gender:       "Female",
+			Location: models.Location{
+				Latitude:  51.5074, // London, UK
+				Longitude: -0.1278,
+				ZipCode:   "SW1A 1AA",
+				City:      "London",
+				State:     "England",
+			},
+		},
+		{
+			Email:        "sydney@fallback.com",
+			PasswordHash: "password123",
+			Name:         "Sydney User",
+			SkillLevel:   4.0,
+			GameStyles:   []string{"Singles", "Competitive"},
+			Gender:       "Male",
+			Location: models.Location{
+				Latitude:  -33.8688, // Sydney, Australia
+				Longitude: 151.2093,
+				ZipCode:   "2000",
+				City:      "Sydney",
+				State:     "NSW",
+			},
+		},
+	}
+
+	for _, user := range farUsers {
+		err := repo.Create(ctx, user)
+		require.NoError(t, err, "Failed to create far user: %s", user.Name)
+	}
+
+	// Test 1: Search with very small radius (1 mile) - should trigger fallback
+	filters := map[string]interface{}{
+		"userID": mainUser.ID,
+	}
+	users, err := repo.GetNearbyUsers(ctx, mainUser.Location.Latitude, mainUser.Location.Longitude, 1.0, filters)
+	assert.NoError(t, err, "GetNearbyUsers should not return an error")
+	assert.Equal(t, 3, len(users), "Should return all 3 far users as fallback when none in range")
+
+	// Verify all returned users have distance information
+	for _, user := range users {
+		assert.Greater(t, user.Distance, 1.0, "All users should be outside the 1-mile radius")
+		assert.NotEmpty(t, user.Name, "User should have a name")
+		assert.NotNil(t, user.GameStyles, "GameStyles should be initialized")
+		assert.NotNil(t, user.PreferredTimes, "PreferredTimes should be initialized")
+	}
+
+	// Test 2: Search with very large radius - should return users normally (not fallback)
+	users, err = repo.GetNearbyUsers(ctx, mainUser.Location.Latitude, mainUser.Location.Longitude, 25000.0, filters)
+	assert.NoError(t, err, "GetNearbyUsers should not return an error")
+	assert.Equal(t, 3, len(users), "Should return all 3 users within large radius")
+
+	// Test 3: Test fallback limit (create more than 20 users to test the 20-user limit)
+	for i := 0; i < 25; i++ {
+		extraUser := &models.User{
+			Email:        fmt.Sprintf("extra%d@fallback.com", i),
+			PasswordHash: "password123",
+			Name:         fmt.Sprintf("Extra User %d", i),
+			SkillLevel:   4.0,
+			GameStyles:   []string{"Singles", "Competitive"},
+			Gender:       "Male",
+			Location: models.Location{
+				Latitude:  float64(40 + i), // Spread across different latitudes
+				Longitude: float64(100 + i),
+				ZipCode:   "00000",
+				City:      "Far City",
+				State:     "Far State",
+			},
+		}
+		err := repo.Create(ctx, extraUser)
+		require.NoError(t, err, "Failed to create extra user")
+	}
+
+	// Test fallback with limit
+	users, err = repo.GetNearbyUsers(ctx, mainUser.Location.Latitude, mainUser.Location.Longitude, 0.1, filters)
+	assert.NoError(t, err, "GetNearbyUsers should not return an error")
+	assert.Equal(t, 20, len(users), "Should return exactly 20 users as fallback limit")
+}
+
+// TestUserRepository_GetNearbyUsers_DistanceCalculation tests distance calculation accuracy
+func TestUserRepository_GetNearbyUsers_DistanceCalculation(t *testing.T) {
+	// Skip if not in test environment
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	// Setup
+	db := setupTestDB(t)
+	defer db.Close()
+
+	// Clear any existing test data
+	clearTestData(t, db)
+
+	repo := NewUserRepository(db)
+	ctx := context.Background()
+
+	// Create main user
+	mainUser := &models.User{
+		Email:        "main@distance.com",
+		PasswordHash: "password123",
+		Name:         "Main User",
+		SkillLevel:   4.0,
+		GameStyles:   []string{"Singles"},
+		Gender:       "Male",
+		Location: models.Location{
+			Latitude:  37.7749,
+			Longitude: -122.4194,
+			ZipCode:   "94105",
+			City:      "San Francisco",
+			State:     "CA",
+		},
+	}
+	err := repo.Create(ctx, mainUser)
+	require.NoError(t, err, "Failed to create main user")
+
+	// Create a user at a known distance
+	nearUser := &models.User{
+		Email:        "near@distance.com",
+		PasswordHash: "password123",
+		Name:         "Near User",
+		SkillLevel:   4.0,
+		GameStyles:   []string{"Singles"},
+		Gender:       "Male",
+		Location: models.Location{
+			Latitude:  37.7849, // About 0.01 degrees north (roughly 0.7 miles)
+			Longitude: -122.4194,
+			ZipCode:   "94109",
+			City:      "San Francisco",
+			State:     "CA",
+		},
+	}
+	err = repo.Create(ctx, nearUser)
+	require.NoError(t, err, "Failed to create near user")
+
+	// Test distance calculation
+	filters := map[string]interface{}{
+		"userID": mainUser.ID,
+	}
+	users, err := repo.GetNearbyUsers(ctx, mainUser.Location.Latitude, mainUser.Location.Longitude, 5.0, filters)
+	assert.NoError(t, err, "GetNearbyUsers should not return an error")
+	assert.Equal(t, 1, len(users), "Should find 1 nearby user")
+
+	if len(users) > 0 {
+		assert.Greater(t, users[0].Distance, 0.0, "Distance should be greater than 0")
+		assert.Less(t, users[0].Distance, 2.0, "Distance should be less than 2 miles for this test case")
+		assert.Equal(t, "Near User", users[0].Name, "Should find the correct user")
+	}
 }

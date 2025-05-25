@@ -9,17 +9,26 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/user/tennis-connect/models"
-	"github.com/user/tennis-connect/repository"
 	"github.com/user/tennis-connect/utils"
 )
 
+// UserRepositoryInterface defines the interface for user repository operations
+type UserRepositoryInterface interface {
+	Create(ctx context.Context, user *models.User) error
+	GetByID(ctx context.Context, id uuid.UUID) (*models.User, error)
+	GetByEmail(ctx context.Context, email string) (*models.User, error)
+	Update(ctx context.Context, user *models.User) error
+	GetNearbyUsers(ctx context.Context, latitude, longitude, radius float64, filters map[string]interface{}) ([]*models.User, error)
+	VerifyPassword(ctx context.Context, email, password string) (bool, *models.User, error)
+}
+
 // UserHandler handles user-related HTTP requests
 type UserHandler struct {
-	userRepo *repository.UserRepository
+	userRepo UserRepositoryInterface
 }
 
 // NewUserHandler creates a new UserHandler
-func NewUserHandler(userRepo *repository.UserRepository) *UserHandler {
+func NewUserHandler(userRepo UserRepositoryInterface) *UserHandler {
 	return &UserHandler{
 		userRepo: userRepo,
 	}
@@ -238,10 +247,30 @@ func (h *UserHandler) GetNearbyUsers(c *gin.Context) {
 		return
 	}
 
-	// Return the results
-	c.JSON(http.StatusOK, gin.H{
+	// Check if any users are within the specified radius
+	usersInRange := 0
+	usersOutOfRange := 0
+	for _, user := range nearbyUsers {
+		if user.Distance <= radius {
+			usersInRange++
+		} else {
+			usersOutOfRange++
+		}
+	}
+
+	// Return the results with metadata
+	response := gin.H{
 		"users": nearbyUsers,
-	})
+		"metadata": gin.H{
+			"total_users":        len(nearbyUsers),
+			"users_in_range":     usersInRange,
+			"users_out_of_range": usersOutOfRange,
+			"search_radius":      radius,
+			"showing_fallback":   usersOutOfRange > 0 && usersInRange == 0,
+		},
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // LikeUser handles a user liking another user's profile
