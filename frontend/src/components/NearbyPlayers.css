@@ -1,0 +1,219 @@
+.nearby-players-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+h1 {
+  color: #2e4057;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* Filters Section */
+.filters-container {
+  background-color: #f5f7fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.filters-container h2 {
+  color: #2e4057;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+}
+
+.filter-group {
+  margin-bottom: 15px;
+}
+
+.filter-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.filter-group select, 
+.filter-group input[type="range"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  margin-right: 15px;
+  font-weight: normal;
+}
+
+.checkbox-label input {
+  margin-right: 5px;
+}
+
+.apply-filters-button {
+  background-color: #4c8bf5;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  font-size: 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+  width: 100%;
+  transition: background-color 0.2s;
+}
+
+.apply-filters-button:hover {
+  background-color: #3a78e7;
+}
+
+/* Players List */
+.players-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.player-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.player-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.player-info {
+  padding: 20px;
+}
+
+.player-info h3 {
+  margin-top: 0;
+  color: #2e4057;
+}
+
+.player-badges {
+  display: flex;
+  margin-bottom: 15px;
+  gap: 8px;
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 12px;
+  display: inline-block;
+}
+
+.badge.verified {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.badge.newcomer {
+  background-color: #fff8e1;
+  color: #ffa000;
+}
+
+.player-info p {
+  margin: 8px 0;
+}
+
+.availability {
+  margin-top: 15px;
+  background-color: #f9f9f9;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.availability h4 {
+  margin-top: 0;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.availability ul {
+  list-style-type: none;
+  padding-left: 0;
+  margin: 8px 0 0;
+}
+
+.availability li {
+  font-size: 0.85rem;
+  margin-bottom: 5px;
+}
+
+.player-actions {
+  border-top: 1px solid #eee;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.like-button {
+  background-color: #ff4081;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.like-button:hover {
+  background-color: #e91e63;
+}
+
+.like-button.liked {
+  background-color: #c2185b;
+  cursor: default;
+}
+
+.like-button:disabled {
+  opacity: 0.7;
+}
+
+/* Loading and Error States */
+.loading, .error, .no-players {
+  text-align: center;
+  padding: 40px;
+  font-size: 1.1rem;
+  color: #666;
+}
+
+.error {
+  color: #d32f2f;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .players-list {
+    grid-template-columns: 1fr;
+  }
+  
+  .checkbox-group {
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .checkbox-label {
+    margin-right: 0;
+    margin-bottom: 5px;
+  }
+} 
