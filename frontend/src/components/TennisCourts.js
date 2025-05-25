@@ -441,7 +441,10 @@ const TennisCourts = () => {
                     {court.availability === 'Busy' ? 'Court Busy' : 'Check In'}
                   </button>
                 )}
-                <button className="book-button">
+                <button 
+                  className="book-button"
+                  onClick={() => alert('Court booking feature coming soon! Please contact the court directly for now.')}
+                >
                   Book Court
                 </button>
               </div>

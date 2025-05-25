@@ -23,10 +23,16 @@ const Profile = () => {
       }
 
       const response = await api.get(`/users/profile/${user.id}`);
-      setProfile(response.data);
+      const profileData = {
+        ...response.data,
+        gameStyles: response.data.gameStyles || [],
+        preferredTimes: response.data.preferredTimes || [],
+        location: response.data.location || { latitude: 0, longitude: 0, zipCode: '', city: '', state: '' }
+      };
+      setProfile(profileData);
       
       // Initialize form data with current profile
-      setFormData(response.data);
+      setFormData(profileData);
     } catch (err) {
       console.error('Error fetching profile:', err);
       setError('Failed to load profile. Please try again later.');
@@ -65,7 +71,7 @@ const Profile = () => {
 
   const handleGameStyleChange = (style) => {
     setFormData(prev => {
-      const styles = [...prev.gameStyles];
+      const styles = [...(prev.gameStyles || [])];
       if (styles.includes(style)) {
         return { ...prev, gameStyles: styles.filter(s => s !== style) };
       } else {
@@ -198,7 +204,7 @@ const Profile = () => {
               </div>
               <div className="profile-info-row">
                 <span className="info-label">Game Styles:</span>
-                <span className="info-value">{profile.gameStyles.join(', ')}</span>
+                <span className="info-value">{profile.gameStyles && profile.gameStyles.length > 0 ? profile.gameStyles.join(', ') : 'Not specified'}</span>
               </div>
               {profile.bio && (
                 <div className="profile-bio">
@@ -211,7 +217,7 @@ const Profile = () => {
           
           <div className="profile-availability">
             <h2>Preferred Playing Times</h2>
-            {profile.preferredTimes.length === 0 ? (
+            {!profile.preferredTimes || profile.preferredTimes.length === 0 ? (
               <p>No preferred times set.</p>
             ) : (
               <div className="time-slots-grid">
@@ -345,7 +351,7 @@ const Profile = () => {
                     <label key={style} className="checkbox-label">
                       <input
                         type="checkbox"
-                        checked={formData.gameStyles.includes(style)}
+                        checked={formData.gameStyles && formData.gameStyles.includes(style)}
                         onChange={() => handleGameStyleChange(style)}
                       />
                       {style}

@@ -1,5 +1,4 @@
 # Development overrides for docker-compose
-version: '3.8'
 
 services:
   backend:

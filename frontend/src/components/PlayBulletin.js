@@ -494,10 +494,16 @@ const PlayBulletin = () => {
                                 <p className="text-[#49739c] text-sm">{response.message}</p>
                                 {response.status === 'Pending' && (
                                   <div className="flex gap-2 mt-2">
-                                    <button className="px-3 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition-colors">
+                                    <button 
+                                      className="px-3 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition-colors"
+                                      onClick={() => alert('Accept/Decline functionality coming soon!')}
+                                    >
                                       Accept
                                     </button>
-                                    <button className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition-colors">
+                                    <button 
+                                      className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition-colors"
+                                      onClick={() => alert('Accept/Decline functionality coming soon!')}
+                                    >
                                       Decline
                                     </button>
                                   </div>
