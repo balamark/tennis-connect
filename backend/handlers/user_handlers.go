@@ -234,6 +234,12 @@ func (h *UserHandler) LikeUser(c *gin.Context) {
 		return
 	}
 
+	// Prevent users from liking themselves
+	if userID == targetUserID {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot like yourself"})
+		return
+	}
+
 	// TODO: Implement player match functionality using repository
 	// For now, just return a mock response
 	isMatch := true // Assume it's a match for this example

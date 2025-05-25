@@ -144,12 +144,7 @@ func (h *BulletinHandler) RespondToBulletin(c *gin.Context) {
 	}
 
 	// Get user ID from auth context to verify ownership
-	_, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-	userIDStr, exists = c.Get("userID")
+	userIDStr, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -227,7 +222,7 @@ func (h *BulletinHandler) UpdateBulletinResponseStatus(c *gin.Context) {
 	}
 
 	// Get user ID from auth context to verify ownership
-	_, exists := c.Get("userID")
+	userIDStr, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -236,6 +231,7 @@ func (h *BulletinHandler) UpdateBulletinResponseStatus(c *gin.Context) {
 	// In a real app, verify that the user owns the bulletin
 	// This would use userIDStr to check ownership
 	// For now, we'll skip this check and just use the existence check above
+	_ = userIDStr // Mark as used to avoid compiler warning
 
 	// Update the response status
 	ctx := context.Background()
@@ -258,12 +254,7 @@ func (h *BulletinHandler) DeleteBulletin(c *gin.Context) {
 	}
 
 	// Get user ID from auth context to verify ownership
-	_, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-	userIDStr, exists = c.Get("userID")
+	userIDStr, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
