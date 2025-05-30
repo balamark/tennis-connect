@@ -16,6 +16,7 @@ help:
 	@echo "  fmt            - Format code"
 	@echo "  migrate        - Run database migrations"
 	@echo "  migrate-down   - Rollback database migrations"
+	@echo "  migrate-status - Show migration status"
 	@echo "  migrate-create - Create new migration (name=migration_name)"
 	@echo "  db-setup       - Set up development database"
 	@echo "  db-reset       - Reset development database"
@@ -131,6 +132,11 @@ migrate:
 migrate-down:
 	@echo "Rolling back database migrations..."
 	$(GOCMD) run cmd/migrate/main.go down
+
+.PHONY: migrate-status
+migrate-status:
+	@echo "Checking migration status..."
+	$(GOCMD) run cmd/migrate/main.go status
 
 .PHONY: migrate-create
 migrate-create:
