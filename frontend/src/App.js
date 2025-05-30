@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import './App.css';
 
@@ -14,21 +14,36 @@ import Profile from './components/Profile';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userName, setUserName] = useState('');
 
-  useEffect(() => {
-    // Check if user is logged in (token exists in localStorage)
+  const updateUserInfo = useCallback(() => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
     
     if (token && userData) {
       setIsAuthenticated(true);
+      try {
+        const user = JSON.parse(userData);
+        setUserName(user.name || 'My Profile');
+      } catch (err) {
+        console.error('Error parsing user data:', err);
+        setUserName('My Profile');
+      }
+    } else {
+      setIsAuthenticated(false);
+      setUserName('');
     }
   }, []);
+
+  useEffect(() => {
+    updateUserInfo();
+  }, [updateUserInfo]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setIsAuthenticated(false);
+    setUserName('');
   };
 
   return (
@@ -41,14 +56,14 @@ function App() {
           <nav className="app-nav">
             <Link to="/" className="nav-link">Players Near You</Link>
             <Link to="/courts" className="nav-link">Court Finder</Link>
-            <Link to="/bulletins" className="nav-link">Looking to Play</Link>
+            <Link to="/bulletins" className="nav-link">Bulletin</Link>
             <Link to="/events" className="nav-link">Events</Link>
             <Link to="/communities" className="nav-link">Communities</Link>
           </nav>
           <div className="user-controls">
             {isAuthenticated ? (
               <div className="user-menu">
-                <Link to="/profile" className="profile-link">My Profile</Link>
+                <Link to="/profile" className="profile-link">{userName}</Link>
                 <button className="logout-button" onClick={handleLogout}>Sign Out</button>
               </div>
             ) : (
@@ -70,12 +85,12 @@ function App() {
             <Route path="/login" element={
               isAuthenticated ? 
                 <Navigate to="/" replace /> : 
-                <Login setIsAuthenticated={setIsAuthenticated} />
+                <Login setIsAuthenticated={setIsAuthenticated} updateUserInfo={updateUserInfo} />
             } />
             <Route path="/register" element={
               isAuthenticated ? 
                 <Navigate to="/" replace /> : 
-                <Register />
+                <Register updateUserInfo={updateUserInfo} />
             } />
             <Route path="/profile" element={
               isAuthenticated ? 

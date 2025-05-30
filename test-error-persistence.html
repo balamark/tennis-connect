@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error Message Persistence Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .auth-error {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 12px 15px;
+            border-radius: 6px;
+            border: 1px solid #ffcdd2;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+            animation: errorSlideIn 0.3s ease-out;
+            box-shadow: 0 2px 8px rgba(198, 40, 40, 0.1);
+        }
+        @keyframes errorSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        button {
+            background-color: #4c8bf5;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #3a78e7;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Error Message Persistence Test</h1>
+    <p>This demonstrates the improved error message behavior in the login form:</p>
+    
+    <div class="test-section">
+        <h2>✅ Improved Behavior (Current Implementation)</h2>
+        <p><strong>Key improvements:</strong></p>
+        <ul>
+            <li>Error messages persist until user starts typing or login succeeds</li>
+            <li>Error is NOT cleared immediately when form is submitted</li>
+            <li>Enhanced visual styling with animation</li>
+            <li>Better user experience - users can read the error message</li>
+        </ul>
+        
+        <div id="error-display" style="display: none;" class="auth-error">
+            Invalid credentials - please check your email and password
+        </div>
+        
+        <form id="test-form">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <button type="button" onclick="simulateError()">Simulate Login Error</button>
+            <button type="button" onclick="simulateSuccess()">Simulate Success</button>
+            <button type="button" onclick="clearError()">Clear Error</button>
+        </form>
+        
+        <div id="status"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>❌ Old Behavior (What was happening before)</h2>
+        <ul>
+            <li>Error was cleared immediately when form was submitted</li>
+            <li>Users couldn't read error messages if they clicked submit quickly</li>
+            <li>Poor user experience - errors disappeared too fast</li>
+            <li>No visual feedback when errors occurred</li>
+        </ul>
+    </div>
+
+    <script>
+        let errorTimeout;
+        
+        function simulateError() {
+            const errorDiv = document.getElementById('error-display');
+            const status = document.getElementById('status');
+            
+            // Show error with animation
+            errorDiv.style.display = 'block';
+            errorDiv.style.animation = 'none';
+            setTimeout(() => {
+                errorDiv.style.animation = 'errorSlideIn 0.3s ease-out';
+            }, 10);
+            
+            status.innerHTML = '<span class="error">❌ Login failed - error message is now visible and persistent</span>';
+            
+            // Clear any existing timeout
+            if (errorTimeout) {
+                clearTimeout(errorTimeout);
+            }
+        }
+        
+        function simulateSuccess() {
+            const errorDiv = document.getElementById('error-display');
+            const status = document.getElementById('status');
+            
+            // Clear error on success
+            errorDiv.style.display = 'none';
+            status.innerHTML = '<span class="success">✅ Login successful - error cleared</span>';
+        }
+        
+        function clearError() {
+            const errorDiv = document.getElementById('error-display');
+            const status = document.getElementById('status');
+            
+            errorDiv.style.display = 'none';
+            status.innerHTML = '<span>Error manually cleared</span>';
+        }
+        
+        // Simulate clearing error when user types (with delay)
+        document.getElementById('email').addEventListener('input', function() {
+            const errorDiv = document.getElementById('error-display');
+            if (errorDiv.style.display !== 'none') {
+                if (errorTimeout) {
+                    clearTimeout(errorTimeout);
+                }
+                errorTimeout = setTimeout(() => {
+                    errorDiv.style.display = 'none';
+                    document.getElementById('status').innerHTML = '<span>Error cleared after user started typing</span>';
+                }, 100);
+            }
+        });
+        
+        document.getElementById('password').addEventListener('input', function() {
+            const errorDiv = document.getElementById('error-display');
+            if (errorDiv.style.display !== 'none') {
+                if (errorTimeout) {
+                    clearTimeout(errorTimeout);
+                }
+                errorTimeout = setTimeout(() => {
+                    errorDiv.style.display = 'none';
+                    document.getElementById('status').innerHTML = '<span>Error cleared after user started typing</span>';
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html> 

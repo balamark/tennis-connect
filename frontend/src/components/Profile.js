@@ -13,6 +13,32 @@ const Profile = () => {
   const skillLevels = ['2.0', '2.5', '3.0', '3.5', '4.0', '4.5', '5.0', '5.5+'];
   const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
+  // Helper function to format time from various formats
+  const formatTime = (timeString) => {
+    if (!timeString) return '00:00';
+    
+    // If it's already in HH:MM format, return as is
+    if (/^\d{2}:\d{2}$/.test(timeString)) {
+      return timeString;
+    }
+    
+    // If it's a full timestamp (e.g., "0000-01-01T09:00:00Z"), extract time
+    if (timeString.includes('T')) {
+      const timePart = timeString.split('T')[1];
+      if (timePart) {
+        return timePart.substring(0, 5); // Get HH:MM part
+      }
+    }
+    
+    // If it's just time with seconds (e.g., "09:00:00"), remove seconds
+    if (/^\d{2}:\d{2}:\d{2}$/.test(timeString)) {
+      return timeString.substring(0, 5);
+    }
+    
+    // Fallback
+    return timeString;
+  };
+
   const fetchUserProfile = useCallback(async () => {
     setLoading(true);
     try {
@@ -25,9 +51,12 @@ const Profile = () => {
       const response = await api.get(`/users/profile/${user.id}`);
       const profileData = {
         ...response.data,
-        gameStyles: response.data.gameStyles || [],
-        preferredTimes: response.data.preferredTimes || [],
-        location: response.data.location || { latitude: 0, longitude: 0, zipCode: '', city: '', state: '' }
+        gameStyles: response.data.game_styles || [],
+        preferredTimes: response.data.preferred_times || [],
+        location: response.data.location || { latitude: 0, longitude: 0, zipCode: '', city: '', state: '' },
+        skillLevel: response.data.skill_level ? response.data.skill_level.toString() : '',
+        isNewToArea: response.data.is_new_to_area || false,
+        isVerified: response.data.is_verified || false
       };
       setProfile(profileData);
       
@@ -108,7 +137,25 @@ const Profile = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.put('/users/profile', formData);
+      // Prepare data for API - convert to snake_case field names
+      const submitData = {
+        ...formData,
+        skill_level: parseFloat(formData.skillLevel),
+        game_styles: formData.gameStyles,
+        preferred_times: formData.preferredTimes.map(time => ({
+          day_of_week: time.dayOfWeek,
+          start_time: time.startTime,
+          end_time: time.endTime
+        })),
+        is_new_to_area: formData.isNewToArea,
+        // Remove the camelCase versions to avoid confusion
+        skillLevel: undefined,
+        gameStyles: undefined,
+        preferredTimes: undefined,
+        isNewToArea: undefined
+      };
+      
+      await api.put('/users/profile', submitData);
       
       // Update local profile
       setProfile(formData);
@@ -126,7 +173,7 @@ const Profile = () => {
     id: '1',
     email: 'user@example.com',
     name: 'Tennis Player',
-    skillLevel: 4.0,
+    skillLevel: '4.0', // Keep as string for form compatibility
     gameStyles: ['Singles', 'Competitive'],
     gender: 'Male',
     isNewToArea: false,
@@ -200,11 +247,18 @@ const Profile = () => {
               <h2>Tennis Information</h2>
               <div className="profile-info-row">
                 <span className="info-label">Skill Level:</span>
-                <span className="info-value">{profile.skillLevel} NTRP</span>
+                <span className="info-value">
+                  {profile.skillLevel ? `${profile.skillLevel} NTRP` : 'Not specified'}
+                </span>
               </div>
               <div className="profile-info-row">
                 <span className="info-label">Game Styles:</span>
-                <span className="info-value">{profile.gameStyles && profile.gameStyles.length > 0 ? profile.gameStyles.join(', ') : 'Not specified'}</span>
+                <span className="info-value">
+                  {profile.gameStyles && profile.gameStyles.length > 0 
+                    ? profile.gameStyles.join(', ') 
+                    : 'Not specified'
+                  }
+                </span>
               </div>
               {profile.bio && (
                 <div className="profile-bio">
@@ -224,7 +278,7 @@ const Profile = () => {
                 {profile.preferredTimes.map((timeSlot, index) => (
                   <div key={index} className="time-slot-card">
                     <h3>{timeSlot.dayOfWeek}</h3>
-                    <p>{timeSlot.startTime} - {timeSlot.endTime}</p>
+                    <p>{formatTime(timeSlot.startTime)} - {formatTime(timeSlot.endTime)}</p>
                   </div>
                 ))}
               </div>
@@ -338,6 +392,7 @@ const Profile = () => {
                   onChange={handleChange}
                   required
                 >
+                  <option value="">Select your skill level</option>
                   {skillLevels.map(level => (
                     <option key={level} value={level}>{level}</option>
                   ))}

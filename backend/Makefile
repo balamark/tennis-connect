@@ -158,6 +158,17 @@ db-reset:
 	$(MAKE) migrate
 	@echo "Database reset complete!"
 
+.PHONY: clean-test-users
+clean-test-users:
+	@echo "Cleaning test users from database..."
+	@if [ ! -f scripts/clean-test-users.sql ]; then \
+		echo "Error: scripts/clean-test-users.sql not found"; \
+		exit 1; \
+	fi
+	@echo "Connecting to database and removing test users..."
+	@docker exec -i $$(docker-compose -f ../docker-compose.yml ps -q db) psql -U $${DB_USER:-postgres} -d $${DB_NAME:-tennis_connect} < scripts/clean-test-users.sql
+	@echo "Test users cleaned successfully!"
+
 # Docker operations
 .PHONY: docker-build
 docker-build:
@@ -197,4 +208,20 @@ ci-test: test-coverage lint
 
 .PHONY: ci-build
 ci-build: build docker-build
-	@echo "CI build completed!" 
+	@echo "CI build completed!"
+
+.PHONY: test-db-setup
+test-db-setup:
+	@echo "Setting up test database..."
+	@docker exec -i $$(docker-compose -f ../docker-compose.yml ps -q db) psql -U postgres -f /dev/stdin < scripts/setup-test-db.sql
+	@echo "Test database setup complete!"
+
+.PHONY: test-db-clean
+test-db-clean:
+	@echo "Cleaning test database..."
+	@docker exec -i $$(docker-compose -f ../docker-compose.yml ps -q db) psql -U postgres -d tennis_connect_test -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+	@echo "Test database cleaned!"
+
+.PHONY: test-with-setup
+test-with-setup: test-db-setup test
+	@echo "Tests completed with fresh database!" 

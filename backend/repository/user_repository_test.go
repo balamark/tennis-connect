@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/google/uuid"
@@ -13,28 +14,71 @@ import (
 	"github.com/user/tennis-connect/models"
 )
 
+// verifyTestDatabase ensures we're connected to the test database
+func verifyTestDatabase(t *testing.T, db *database.DB) {
+	var dbName string
+	err := db.QueryRow("SELECT current_database()").Scan(&dbName)
+	require.NoError(t, err, "Failed to get current database name")
+
+	if dbName != "tennis_connect_test" {
+		t.Fatalf("CRITICAL: Tests are running against database '%s' instead of 'tennis_connect_test'. This could corrupt production data!", dbName)
+	}
+
+	t.Logf("✅ Verified: Tests are running against test database: %s", dbName)
+}
+
 // setupTestDB sets up a test database connection
-func setupTestDB(t *testing.T) *database.DB {
+func setupTestDB(t *testing.T) (*database.DB, func()) {
+	// Set test environment variable BEFORE loading config
+	originalEnv := os.Getenv("APP_ENV")
+	os.Setenv("APP_ENV", "test")
+
 	// Load test configuration
 	cfg := config.LoadConfig()
-	cfg.Environment = "test"
+
+	// Verify we got the test config
+	if cfg.Environment != "test" || cfg.Database.DBName != "tennis_connect_test" {
+		t.Fatalf("Failed to load test configuration. Got environment: %s, database: %s", cfg.Environment, cfg.Database.DBName)
+	}
 
 	// Connect to database
 	db, err := database.Connect(cfg)
 	require.NoError(t, err, "Failed to connect to test database")
 
+	// CRITICAL: Verify we're connected to test database
+	verifyTestDatabase(t, db)
+
 	// Run migrations
 	err = db.RunMigrations("../migrations")
 	require.NoError(t, err, "Failed to run migrations")
 
-	// Clear test data
+	// Clear test data before test
 	clearTestData(t, db)
 
-	return db
+	// Return cleanup function
+	cleanup := func() {
+		clearTestData(t, db)
+		db.Close()
+		// Restore original environment
+		if originalEnv == "" {
+			os.Unsetenv("APP_ENV")
+		} else {
+			os.Setenv("APP_ENV", originalEnv)
+		}
+	}
+
+	return db, cleanup
 }
 
 // clearTestData clears all test data from the database
 func clearTestData(t *testing.T, db *database.DB) {
+	// Use a transaction to ensure all cleanup happens atomically
+	tx, err := db.Begin()
+	if err != nil {
+		t.Logf("Warning: Failed to begin cleanup transaction: %v", err)
+		// Continue with direct cleanup if transaction fails
+	}
+
 	// Clear tables in the correct order to avoid foreign key constraints
 	tables := []string{
 		"player_matches",
@@ -54,8 +98,54 @@ func clearTestData(t *testing.T, db *database.DB) {
 	}
 
 	for _, table := range tables {
-		_, err := db.Exec("DELETE FROM " + table)
-		require.NoError(t, err, "Failed to clear table: "+table)
+		var query string
+		if tx != nil {
+			query = "DELETE FROM " + table
+			_, err := tx.Exec(query)
+			if err != nil {
+				t.Logf("Warning: Failed to clear table %s in transaction: %v", table, err)
+				// Continue with other tables
+			}
+		} else {
+			query = "DELETE FROM " + table
+			_, err := db.Exec(query)
+			if err != nil {
+				t.Logf("Warning: Failed to clear table %s: %v", table, err)
+				// Continue with other tables
+			}
+		}
+	}
+
+	// Reset sequences to ensure consistent IDs in tests
+	sequenceResetQueries := []string{
+		"ALTER SEQUENCE IF EXISTS users_id_seq RESTART WITH 1",
+		"ALTER SEQUENCE IF EXISTS courts_id_seq RESTART WITH 1",
+		"ALTER SEQUENCE IF EXISTS events_id_seq RESTART WITH 1",
+		"ALTER SEQUENCE IF EXISTS bulletins_id_seq RESTART WITH 1",
+		"ALTER SEQUENCE IF EXISTS communities_id_seq RESTART WITH 1",
+	}
+
+	for _, query := range sequenceResetQueries {
+		if tx != nil {
+			_, err := tx.Exec(query)
+			if err != nil {
+				t.Logf("Warning: Failed to reset sequence: %v", err)
+			}
+		} else {
+			_, err := db.Exec(query)
+			if err != nil {
+				t.Logf("Warning: Failed to reset sequence: %v", err)
+			}
+		}
+	}
+
+	// Commit transaction if we used one
+	if tx != nil {
+		err = tx.Commit()
+		if err != nil {
+			t.Logf("Warning: Failed to commit cleanup transaction: %v", err)
+			tx.Rollback()
+		}
 	}
 }
 
@@ -67,8 +157,8 @@ func TestUserRepository_Create(t *testing.T) {
 	}
 
 	// Setup
-	db := setupTestDB(t)
-	defer db.Close()
+	db, cleanup := setupTestDB(t)
+	defer cleanup()
 
 	repo := NewUserRepository(db)
 	ctx := context.Background()
@@ -123,8 +213,8 @@ func TestUserRepository_GetByID(t *testing.T) {
 	}
 
 	// Setup
-	db := setupTestDB(t)
-	defer db.Close()
+	db, cleanup := setupTestDB(t)
+	defer cleanup()
 
 	repo := NewUserRepository(db)
 	ctx := context.Background()
@@ -172,8 +262,8 @@ func TestUserRepository_Update(t *testing.T) {
 	}
 
 	// Setup
-	db := setupTestDB(t)
-	defer db.Close()
+	db, cleanup := setupTestDB(t)
+	defer cleanup()
 
 	repo := NewUserRepository(db)
 	ctx := context.Background()
@@ -236,8 +326,8 @@ func TestUserRepository_GetNearbyUsers(t *testing.T) {
 	}
 
 	// Setup
-	db := setupTestDB(t)
-	defer db.Close()
+	db, cleanup := setupTestDB(t)
+	defer cleanup()
 
 	repo := NewUserRepository(db)
 	ctx := context.Background()
@@ -367,8 +457,8 @@ func TestUserRepository_VerifyPassword(t *testing.T) {
 	}
 
 	// Setup
-	db := setupTestDB(t)
-	defer db.Close()
+	db, cleanup := setupTestDB(t)
+	defer cleanup()
 
 	repo := NewUserRepository(db)
 	ctx := context.Background()
@@ -412,8 +502,8 @@ func TestUserRepository_GetNearbyUsers_FallbackBehavior(t *testing.T) {
 	}
 
 	// Setup
-	db := setupTestDB(t)
-	defer db.Close()
+	db, cleanup := setupTestDB(t)
+	defer cleanup()
 
 	// Clear any existing test data
 	clearTestData(t, db)
@@ -550,8 +640,8 @@ func TestUserRepository_GetNearbyUsers_DistanceCalculation(t *testing.T) {
 	}
 
 	// Setup
-	db := setupTestDB(t)
-	defer db.Close()
+	db, cleanup := setupTestDB(t)
+	defer cleanup()
 
 	// Clear any existing test data
 	clearTestData(t, db)

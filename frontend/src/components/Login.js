@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/config';
 import './Auth.css';
 
-const Login = ({ setIsAuthenticated }) => {
+const Login = ({ setIsAuthenticated, updateUserInfo }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -18,22 +18,32 @@ const Login = ({ setIsAuthenticated }) => {
       ...prev,
       [name]: value
     }));
+    // Clear error when user starts typing (but only after a longer delay so users can read the message)
+    if (error) {
+      setTimeout(() => setError(''), 2000); // Increased from 100ms to 2 seconds
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    // Don't clear error immediately - only clear it on successful login
 
     try {
       const response = await api.post('/users/login', formData);
+      
+      // Clear error only on successful login
+      setError('');
       
       // Store token and user info
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       
-      // Update auth state
+      // Update auth state and user info
       setIsAuthenticated(true);
+      if (updateUserInfo) {
+        updateUserInfo();
+      }
       
       // Redirect to home page
       navigate('/');

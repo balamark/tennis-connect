@@ -97,10 +97,25 @@
 .auth-error {
   background-color: #ffebee;
   color: #c62828;
-  padding: 10px;
-  border-radius: 4px;
-  margin-bottom: 15px;
+  padding: 12px 15px;
+  border-radius: 6px;
+  border: 1px solid #ffcdd2;
+  margin-bottom: 20px;
   text-align: center;
+  font-weight: 500;
+  animation: errorSlideIn 0.3s ease-out;
+  box-shadow: 0 2px 8px rgba(198, 40, 40, 0.1);
+}
+
+@keyframes errorSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .auth-link {

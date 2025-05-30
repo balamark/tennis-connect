@@ -29,6 +29,10 @@ const Register = () => {
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
+    // Clear error when user starts typing (but only after a longer delay so users can read the message)
+    if (error) {
+      setTimeout(() => setError(''), 2000); // Increased from 100ms to 2 seconds
+    }
   };
   
   const handleGameStyleChange = (style) => {
@@ -45,7 +49,7 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    // Don't clear error immediately - only clear it on successful registration
     
     // Validate password match
     if (formData.password !== formData.confirmPassword) {
@@ -75,6 +79,8 @@ const Register = () => {
 
     try {
       await api.post('/users/register', userData);
+      // Clear error only on successful registration
+      setError('');
       alert('Registration successful! Please sign in.');
       navigate('/login');
     } catch (err) {
@@ -154,6 +160,7 @@ const Register = () => {
                 onChange={handleChange}
                 required
               >
+                <option value="">Select your skill level</option>
                 {skillLevels.map(level => (
                   <option key={level} value={level}>{level}</option>
                 ))}

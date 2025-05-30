@@ -65,16 +65,14 @@ export const useFetch = (fetchFunction, dependencies = [], options = {}) => {
       setData(result);
     } catch (err) {
       console.error('Error fetching data:', err);
-      setError('Failed to load data. Please try again later.');
+      setError(err.message || 'Failed to load data. Please try again later.');
       
-      // Use mock data if available
-      if (getMockData) {
-        setData(getMockData());
-      }
+      // Only use mock data if explicitly in demo mode (don't fallback to mock data on API errors)
+      setData([]); // Always set empty array on error, no automatic fallback to mock data
     } finally {
       setLoading(false);
     }
-  }, [fetchFunction, useLocation, getMockData]);
+  }, [fetchFunction, useLocation]);
 
   useEffect(() => {
     if (autoFetch) {

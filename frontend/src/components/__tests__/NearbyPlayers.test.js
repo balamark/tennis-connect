@@ -288,11 +288,11 @@ describe('NearbyPlayers Component', () => {
     
     // Wait for the live mode to load
     await waitFor(() => {
-      expect(screen.getByLabelText('Skill Level (NTRP):')).toBeInTheDocument();
+      expect(screen.getByLabelText('Skill Level (NTRP)')).toBeInTheDocument();
     });
     
     // Change skill level filter
-    const skillSelect = screen.getByLabelText('Skill Level (NTRP):');
+    const skillSelect = screen.getByLabelText('Skill Level (NTRP)');
     fireEvent.change(skillSelect, { target: { value: '4.0' } });
     
     // Apply filters
@@ -319,9 +319,11 @@ describe('NearbyPlayers Component', () => {
     // Switch to live mode
     fireEvent.click(screen.getByText('🎭 Demo Mode - Click for Live Data'));
     
-    // Should fall back to demo data (check for famous tennis players from mock data)
+    // Should show error message instead of falling back to demo data
     await waitFor(() => {
-      expect(screen.getByText('Novak Djokovic')).toBeInTheDocument();
+      expect(screen.getByText(/Failed to load players/)).toBeInTheDocument();
+      expect(screen.getByText('🔄 Retry')).toBeInTheDocument();
+      expect(screen.getByText('🎭 Switch to Demo Mode')).toBeInTheDocument();
     }, { timeout: 3000 });
   });
 

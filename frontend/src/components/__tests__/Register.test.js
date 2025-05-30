@@ -40,8 +40,8 @@ describe('Register Component', () => {
     expect(screen.getByLabelText('Email')).toBeInTheDocument();
     expect(screen.getByLabelText('Password')).toBeInTheDocument();
     expect(screen.getByLabelText('Confirm Password')).toBeInTheDocument();
-    expect(screen.getByLabelText('Skill Level')).toBeInTheDocument();
-    expect(screen.getByLabelText('Gender')).toBeInTheDocument();
+    expect(screen.getByLabelText('Skill Level (NTRP)')).toBeInTheDocument();
+    expect(screen.getByLabelText('Gender (for safety filters)')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Create Account' })).toBeInTheDocument();
   });
 
@@ -82,7 +82,7 @@ describe('Register Component', () => {
   test('handles skill level selection', () => {
     renderRegister();
     
-    const skillLevelSelect = screen.getByLabelText('Skill Level');
+    const skillLevelSelect = screen.getByLabelText('Skill Level (NTRP)');
     fireEvent.change(skillLevelSelect, { target: { value: '4.0' } });
     
     expect(skillLevelSelect.value).toBe('4.0');
@@ -91,7 +91,7 @@ describe('Register Component', () => {
   test('handles gender selection', () => {
     renderRegister();
     
-    const genderSelect = screen.getByLabelText('Gender');
+    const genderSelect = screen.getByLabelText('Gender (for safety filters)');
     fireEvent.change(genderSelect, { target: { value: 'Female' } });
     
     expect(genderSelect.value).toBe('Female');
@@ -118,7 +118,7 @@ describe('Register Component', () => {
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'john@example.com' } });
     fireEvent.change(passwordInput, { target: { value: 'password123' } });
     fireEvent.change(confirmPasswordInput, { target: { value: 'differentpassword' } });
-    fireEvent.change(screen.getByLabelText('Skill Level'), { target: { value: '4.0' } });
+    fireEvent.change(screen.getByLabelText('Skill Level (NTRP)'), { target: { value: '4.0' } });
     
     fireEvent.click(submitButton);
     
@@ -139,8 +139,8 @@ describe('Register Component', () => {
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'john@example.com' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password123' } });
     fireEvent.change(screen.getByLabelText('Confirm Password'), { target: { value: 'password123' } });
-    fireEvent.change(screen.getByLabelText('Skill Level'), { target: { value: '4.0' } });
-    fireEvent.change(screen.getByLabelText('Gender'), { target: { value: 'Male' } });
+    fireEvent.change(screen.getByLabelText('Skill Level (NTRP)'), { target: { value: '4.0' } });
+    fireEvent.change(screen.getByLabelText('Gender (for safety filters)'), { target: { value: 'Male' } });
     
     const submitButton = screen.getByRole('button', { name: 'Create Account' });
     fireEvent.click(submitButton);
@@ -159,8 +159,8 @@ describe('Register Component', () => {
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'john@example.com' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password123' } });
     fireEvent.change(screen.getByLabelText('Confirm Password'), { target: { value: 'password123' } });
-    fireEvent.change(screen.getByLabelText('Skill Level'), { target: { value: '4.0' } });
-    fireEvent.change(screen.getByLabelText('Gender'), { target: { value: 'Male' } });
+    fireEvent.change(screen.getByLabelText('Skill Level (NTRP)'), { target: { value: '4.0' } });
+    fireEvent.change(screen.getByLabelText('Gender (for safety filters)'), { target: { value: 'Male' } });
     
     // Select game styles
     fireEvent.click(screen.getByLabelText('Singles'));
@@ -210,7 +210,7 @@ describe('Register Component', () => {
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'existing@example.com' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password123' } });
     fireEvent.change(screen.getByLabelText('Confirm Password'), { target: { value: 'password123' } });
-    fireEvent.change(screen.getByLabelText('Skill Level'), { target: { value: '4.0' } });
+    fireEvent.change(screen.getByLabelText('Skill Level (NTRP)'), { target: { value: '4.0' } });
     
     const submitButton = screen.getByRole('button', { name: 'Create Account' });
     fireEvent.click(submitButton);
@@ -233,7 +233,7 @@ describe('Register Component', () => {
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'john@example.com' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password123' } });
     fireEvent.change(screen.getByLabelText('Confirm Password'), { target: { value: 'password123' } });
-    fireEvent.change(screen.getByLabelText('Skill Level'), { target: { value: '4.0' } });
+    fireEvent.change(screen.getByLabelText('Skill Level (NTRP)'), { target: { value: '4.0' } });
     
     const submitButton = screen.getByRole('button', { name: 'Create Account' });
     fireEvent.click(submitButton);
@@ -279,7 +279,7 @@ describe('Register Component', () => {
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'john@example.com' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password123' } });
     fireEvent.change(screen.getByLabelText('Confirm Password'), { target: { value: 'password123' } });
-    fireEvent.change(screen.getByLabelText('Skill Level'), { target: { value: '4.0' } });
+    fireEvent.change(screen.getByLabelText('Skill Level (NTRP)'), { target: { value: '4.0' } });
     
     // Check newcomer checkbox
     fireEvent.click(screen.getByLabelText("I'm new to the area and looking to meet players"));

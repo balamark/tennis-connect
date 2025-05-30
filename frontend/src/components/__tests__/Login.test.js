@@ -16,10 +16,10 @@ jest.mock('react-router-dom', () => ({
 }));
 
 // Helper function to render Login with Router
-const renderLogin = (setIsAuthenticated = jest.fn()) => {
+const renderLogin = (setIsAuthenticated = jest.fn(), updateUserInfo = jest.fn()) => {
   return render(
     <BrowserRouter>
-      <Login setIsAuthenticated={setIsAuthenticated} />
+      <Login setIsAuthenticated={setIsAuthenticated} updateUserInfo={updateUserInfo} />
     </BrowserRouter>
   );
 };
@@ -33,7 +33,7 @@ describe('Login Component', () => {
   test('renders login form correctly', () => {
     renderLogin();
     
-    expect(screen.getByText('Sign In')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Sign In' })).toBeInTheDocument();
     expect(screen.getByLabelText('Email')).toBeInTheDocument();
     expect(screen.getByLabelText('Password')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Sign In' })).toBeInTheDocument();
