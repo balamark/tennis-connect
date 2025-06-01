@@ -1,8 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import ComingSoon from './ComingSoon';
 import axios from 'axios';
 import './Events.css';
 
 const Events = () => {
+  // Show Coming Soon message for now since this feature is not fully implemented
+  return (
+    <ComingSoon 
+      title="Tennis Events" 
+      message="Discover and join exciting tennis events in your area! From tournaments to casual rallies, find the perfect match for your skill level."
+      icon="🎾"
+    />
+  );
+
+  // The rest of the component code is commented out for now
+  /*
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -446,6 +458,7 @@ const Events = () => {
       </div>
     </div>
   );
+  */
 };
 
 export default Events; 

@@ -1,7 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import ComingSoon from './ComingSoon';
 import api from '../api/config';
 
 const PlayBulletin = () => {
+  // Show Coming Soon message for now since this feature is not implemented
+  return (
+    <ComingSoon 
+      title="Play Bulletins" 
+      message="Connect with players looking for partners! Post and respond to play opportunities in your area."
+      icon="📢"
+    />
+  );
+
+
   const [bulletins, setBulletins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

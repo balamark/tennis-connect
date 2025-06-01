@@ -1,9 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import ComingSoon from './ComingSoon';
 import axios from 'axios';
 import useFetch from '../hooks/useFetch';
 import './Communities.css';
 
 const Communities = () => {
+  // Show Coming Soon message for now since this feature is not fully implemented
+  return (
+    <ComingSoon 
+      title="Tennis Communities" 
+      message="Join tennis communities in your area! Connect with players, share tips, and organize group activities."
+      icon="👥"
+    />
+  );
+
+  // The rest of the component code is commented out for now
+  /*
   const [selectedCommunity, setSelectedCommunity] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -436,6 +448,7 @@ const Communities = () => {
       </div>
     </div>
   );
+  */
 };
 
 export default Communities; 

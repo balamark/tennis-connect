@@ -61,6 +61,24 @@ const Header = ({ isAuthenticated, userName, onLogout }) => {
           >
             My sessions
           </Link>
+          <Link 
+            className={`text-sm font-medium leading-normal ${isActive('/play-bulletin') ? 'text-[#0c7ff2]' : 'text-[#0d141c]'}`} 
+            to="/play-bulletin"
+          >
+            Bulletins
+          </Link>
+          <Link 
+            className={`text-sm font-medium leading-normal ${isActive('/communities') ? 'text-[#0c7ff2]' : 'text-[#0d141c]'}`} 
+            to="/communities"
+          >
+            Communities
+          </Link>
+          <Link 
+            className={`text-sm font-medium leading-normal ${isActive('/events') ? 'text-[#0c7ff2]' : 'text-[#0d141c]'}`} 
+            to="/events"
+          >
+            Events
+          </Link>
           {isAuthenticated && (
             <Link 
               className={`text-sm font-medium leading-normal ${isActive('/profile') ? 'text-[#0c7ff2]' : 'text-[#0d141c]'}`} 
