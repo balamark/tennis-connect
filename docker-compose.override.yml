@@ -8,7 +8,7 @@ services:
       dockerfile: Dockerfile.dev
     volumes:
       - ./backend:/app
-      - /app/tmp  # Exclude air temp directory
+      - /app/tmp  # Anonymous volume to prevent air temp files from syncing to host
     environment:
       - APP_ENV=development
       - DB_HOST=db
@@ -24,7 +24,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
-    command: npm start
+    command: sh -c "npm install && npm start"
     volumes:
       - ./frontend:/app
       - /app/node_modules  # Exclude node_modules

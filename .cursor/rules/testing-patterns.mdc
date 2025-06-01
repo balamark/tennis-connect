@@ -1,98 +1,50 @@
 ---
-description:
-globs:
+description: 
+globs: 
 alwaysApply: false
 ---
 # Testing Patterns and Commands
 
-## Running Tests That Auto-Exit
+## Windows Command Prompt Requirements
 
-When running tests programmatically or in automation (like from terminal commands), use these flags to prevent watch mode:
+**Use Windows Command Prompt for ALL commands. If any command fails after 3 attempts, pipe to temporary file and read result.**
 
-### Single Test Run (No Watch Mode)
-```bash
-npm test -- --watchAll=false
-```
+### PowerShell Syntax (Current Environment):
+- Use `;` for command chaining: `cd frontend; npm test`
+- Use `>` for all output redirection: `command *> file.txt`
+- Use `Get-Content file.txt` or `type file.txt` to read files
+- Use `Out-File` for complex redirections
 
-### Run Specific Test File
-```bash
-npm test -- --watchAll=false --testPathPattern=ComponentName.test.js
-```
+### CMD Syntax (Alternative):
+- Use `&&` for command chaining: `cd frontend && npm test`
+- Use `>` for output redirection: `command > file.txt 2>&1`
+- Use `type filename.txt` to read file contents
 
-### Run Tests Matching Pattern
-```bash
-npm test -- --watchAll=false --testNamePattern="specific test name"
-```
 
-### CI Mode (Auto-detects CI environment)
-```bash
-npm test -- --ci
-```
 
-### With Verbose Output
-```bash
-npm test -- --watchAll=false --verbose
-```
+## Test Coverage Requirements
+
+**If there is no coverage for the production code logic, make sure to add test.**
+- Every new feature or bug fix must include corresponding tests
+- Authentication flows must be tested
+- Error handling paths must be covered
+- API integration points need tests
+- Edge cases and failure scenarios should be tested
 
 ## Test File Structure
 
 Test files should be located in:
-- [frontend/src/components/__tests__/](mdc:frontend/src/components/__tests__/)
-
-Main test file for nearby players component:
-- [NearbyPlayers.test.js](mdc:frontend/src/components/__tests__/NearbyPlayers.test.js)
+- [frontend/src/components/__tests__/](mdc:frontend/src/components/__tests__)
 
 ## Testing Best Practices
 
 1. **Use specific test names** - Be descriptive about what each test verifies
 2. **Test user interactions** - Use fireEvent for clicks, changes, etc.
 3. **Test edge cases** - Include regression tests for known issues
-4. **Await async operations** - Use waitFor() for async state changes
-5. **Test accessibility** - Use proper queries like getByLabelText, getByRole
-6. **Mock external dependencies** - Mock API calls and external services
-
-## Key Testing Utilities
-
-```javascript
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 ```
 
-## Common Test Patterns
 
-### Dropdown Interaction Testing
-```javascript
-// Open dropdown
-const dropdown = screen.getByText('Select option');
-fireEvent.click(dropdown);
 
-// Select option
-const option = screen.getByText('Option Name');
-fireEvent.click(option);
 
-// Verify selection
-await waitFor(() => {
-  expect(screen.getByText('Option Name')).toBeInTheDocument();
-});
-```
 
-### Form Input Testing
-```javascript
-const input = screen.getByLabelText('Input Label');
-fireEvent.change(input, { target: { value: 'new value' } });
 
-await waitFor(() => {
-  expect(screen.getByDisplayValue('new value')).toBeInTheDocument();
-});
-```
-
-### API Call Testing
-```javascript
-// Mock fetch or use msw library for API mocking
-global.fetch = jest.fn(() =>
-  Promise.resolve({
-    ok: true,
-    json: () => Promise.resolve({ data: 'mock data' }),
-  })
-);
-```

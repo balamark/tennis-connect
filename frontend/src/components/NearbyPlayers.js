@@ -141,8 +141,13 @@ const NearbyPlayers = () => {
     setError('');
     
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('token');
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      
+      // Check if user is authenticated
+      if (!token) {
+        throw new Error('Please log in to view nearby players. Click "Sign In" in the top menu to get started.');
+      }
       
       // Build query parameters
       const params = new URLSearchParams({
@@ -163,7 +168,17 @@ const NearbyPlayers = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        if (response.status === 401) {
+          throw new Error('Your session has expired. Please log in again to view nearby players.');
+        } else if (response.status === 404) {
+          throw new Error('Service temporarily unavailable. Please try again later or switch to Demo mode.');
+        } else if (response.status === 500) {
+          throw new Error('Server error. Please try again later.');
+        } else if (response.status >= 500) {
+          throw new Error('Server is experiencing issues. Please try again later.');
+        } else {
+          throw new Error(`Unable to load players. Please check your connection and try again.`);
+        }
       }
 
       const data = await response.json();
@@ -183,7 +198,7 @@ const NearbyPlayers = () => {
 
     } catch (err) {
       console.error('Error fetching nearby players:', err);
-      setError('Failed to load players. Please check your connection and try again.');
+      setError(err.message || 'Failed to load players. Please check your connection and try again.');
       setPlayers([]);
       setSearchMetadata({
         total_users: 0,
@@ -327,7 +342,7 @@ const NearbyPlayers = () => {
     try {
       if (!isDemoMode) {
         // Make real API call to like player
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem('token');
         const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
         
         await fetch(`${apiUrl}/api/users/like`, {
@@ -402,6 +417,90 @@ const NearbyPlayers = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Enhanced error display component
+  const renderError = () => {
+    if (!error) return null;
+
+    const isAuthError = error.includes('log in') || error.includes('session has expired');
+    const isServiceError = error.includes('temporarily unavailable') || error.includes('Service');
+    
+    return (
+      <div className="error-with-suggestion">
+        <div className="error-title">
+          {isAuthError ? '🔐 Authentication Required' : 
+           isServiceError ? '⚠️ Service Issue' : 
+           '❌ Connection Error'}
+        </div>
+        <div className="error-message">{error}</div>
+        
+        {isAuthError && (
+          <div className="error-actions">
+            <button 
+              className="error-action-button"
+              onClick={() => window.location.href = '/login'}
+            >
+              Go to Sign In
+            </button>
+            <button 
+              className="error-action-button secondary"
+              onClick={() => setIsDemoMode(true)}
+            >
+              Switch to Demo Mode
+            </button>
+          </div>
+        )}
+        
+        {isServiceError && (
+          <div className="error-actions">
+            <button 
+              className="error-action-button"
+              onClick={() => {
+                setError('');
+                if (!isDemoMode) {
+                  fetchNearbyPlayers();
+                }
+              }}
+            >
+              Try Again
+            </button>
+            <button 
+              className="error-action-button secondary"
+              onClick={() => setIsDemoMode(true)}
+            >
+              Use Demo Mode
+            </button>
+          </div>
+        )}
+        
+        {!isAuthError && !isServiceError && (
+          <div className="error-actions">
+            <button 
+              className="error-action-button"
+              onClick={() => {
+                setError('');
+                if (!isDemoMode) {
+                  fetchNearbyPlayers();
+                }
+              }}
+            >
+              Retry
+            </button>
+            <button 
+              className="error-action-button secondary"
+              onClick={() => setIsDemoMode(true)}
+            >
+              Switch to Demo Mode
+            </button>
+          </div>
+        )}
+        
+        <div className="error-suggestion">
+          💡 Demo mode works offline and doesn't require a login
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="nearby-players-container">
@@ -589,7 +688,7 @@ const NearbyPlayers = () => {
           </div>
         ) : error ? (
           <div className="error">
-            <p>Error loading players: {error}</p>
+            {renderError()}
           </div>
         ) : players.length === 0 ? (
           <div className="no-players">

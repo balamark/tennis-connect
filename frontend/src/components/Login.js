@@ -18,22 +18,17 @@ const Login = ({ setIsAuthenticated, updateUserInfo }) => {
       ...prev,
       [name]: value
     }));
-    // Clear error when user starts typing (but only after a longer delay so users can read the message)
-    if (error) {
-      setTimeout(() => setError(''), 2000); // Increased from 100ms to 2 seconds
-    }
+    // Don't auto-clear errors - let users read them until they fix the issue
+    // Error will be cleared only on successful login or form resubmission
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    // Don't clear error immediately - only clear it on successful login
+    setError(''); // Clear any previous errors when attempting login
 
     try {
       const response = await api.post('/users/login', formData);
-      
-      // Clear error only on successful login
-      setError('');
       
       // Store token and user info
       localStorage.setItem('token', response.data.token);
@@ -49,7 +44,8 @@ const Login = ({ setIsAuthenticated, updateUserInfo }) => {
       navigate('/');
     } catch (err) {
       console.error('Login error:', err);
-      setError(err.response?.data?.error || 'Failed to login. Please try again.');
+      const errorMessage = err.response?.data?.error || 'Failed to login. Please try again.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -259,6 +259,11 @@ coverage.xml
 # Jest
 /frontend/coverage/
 
+# Test result files
+test-results.txt
+*test-results.txt
+test-*.txt
+
 # =============================================================================
 # BUILD TOOLS & PACKAGE MANAGERS
 # =============================================================================
