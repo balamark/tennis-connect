@@ -29,9 +29,9 @@ const Register = () => {
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
-    // Clear error when user starts typing (but only after a longer delay so users can read the message)
+    // Clear error when user starts typing
     if (error) {
-      setTimeout(() => setError(''), 2000); // Increased from 100ms to 2 seconds
+      setError('');
     }
   };
   
@@ -46,22 +46,59 @@ const Register = () => {
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    // Don't clear error immediately - only clear it on successful registration
+  const validateForm = () => {
+    if (!formData.name.trim()) {
+      setError('Full name is required');
+      return false;
+    }
     
-    // Validate password match
+    if (!formData.email.trim()) {
+      setError('Email is required');
+      return false;
+    }
+    
+    if (!formData.email.includes('@')) {
+      setError('Please enter a valid email address');
+      return false;
+    }
+    
+    if (!formData.password) {
+      setError('Password is required');
+      return false;
+    }
+    
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return false;
+    }
+    
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
-      setLoading(false);
+      return false;
+    }
+    
+    if (!formData.skillLevel) {
+      setError('Please select your skill level');
+      return false;
+    }
+    
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
       return;
     }
     
+    setLoading(true);
+    setError('');
+    
     // Prepare data for API
     const userData = {
-      name: formData.name,
-      email: formData.email,
+      name: formData.name.trim(),
+      email: formData.email.trim().toLowerCase(),
       password: formData.password,
       skillLevel: parseFloat(formData.skillLevel),
       gameStyles: formData.gameStyles,
@@ -78,14 +115,41 @@ const Register = () => {
     };
 
     try {
-      await api.post('/users/register', userData);
-      // Clear error only on successful registration
+      const response = await api.post('/users/register', userData);
+      console.log('Registration successful:', response.data);
+      
+      // Clear form and error
       setError('');
+      setFormData({
+        name: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        skillLevel: '',
+        gameStyles: [],
+        gender: '',
+        isNewToArea: false
+      });
+      
       alert('Registration successful! Please sign in.');
       navigate('/login');
     } catch (err) {
       console.error('Registration error:', err);
-      setError(err.response?.data?.error || 'Failed to register. Please try again.');
+      
+      // Handle different types of errors
+      if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else if (err.response?.status === 400) {
+        setError('Please check your information and try again.');
+      } else if (err.response?.status === 409) {
+        setError('An account with this email already exists.');
+      } else if (err.response?.status >= 500) {
+        setError('Server error. Please try again later.');
+      } else if (err.code === 'NETWORK_ERROR' || !err.response) {
+        setError('Unable to connect to server. Please check your internet connection.');
+      } else {
+        setError('Failed to register. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

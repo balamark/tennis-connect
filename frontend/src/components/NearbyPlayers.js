@@ -1,684 +1,681 @@
-import React, { useState, useCallback } from 'react';
-import api from '../api/config';
-import useFetch from '../hooks/useFetch';
+import React, { useState, useEffect } from 'react';
 import './NearbyPlayers.css';
 
 const NearbyPlayers = () => {
-  const [demoMode, setDemoMode] = useState(true); // Start in demo mode
-  const [metadata, setMetadata] = useState(null); // Store search metadata
+  const [players, setPlayers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [isDemoMode, setIsDemoMode] = useState(true);
+  const [viewMode, setViewMode] = useState('detailed'); // 'detailed' or 'compact'
+  const [searchMetadata, setSearchMetadata] = useState(null);
+
+  // Filter states
   const [filters, setFilters] = useState({
     skillLevel: '',
+    radius: 10,
     gameStyles: [],
     preferredDays: [],
-    radius: '10',
-    isNewcomer: false,
-    gender: ''
+    gender: '',
+    isNewcomer: false
   });
 
-  const gameStyleOptions = ['Singles', 'Doubles', 'Social', 'Competitive'];
-  const dayOptions = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-  const skillLevels = ['2.0', '2.5', '3.0', '3.5', '4.0', '4.5', '5.0', '5.5+'];
+  // Dropdown states for multi-select
+  const [stylesDropdownOpen, setStylesDropdownOpen] = useState(false);
+  const [daysDropdownOpen, setDaysDropdownOpen] = useState(false);
 
-  // Mock data for development with realistic tennis players (matching database seed data)
-  const getMockPlayers = useCallback(() => [
+  // Mock data for demo mode only
+  const getMockPlayers = () => [
     {
-      id: '550e8400-e29b-41d4-a716-446655440101',
-      name: 'Sarah Chen',
-      skill_level: 4.5,
-      game_styles: ['Singles', 'Competitive'],
-      is_verified: true,
-      is_new_to_area: false,
-      gender: 'Female',
-      photo: 'https://images.unsplash.com/photo-1594736797933-d0401ba2fe65?w=400&h=400&fit=crop&crop=face',
-      bio: 'Former college player, love competitive singles and doubles. Always looking for challenging matches!',
-      preferred_times: [
-        { day_of_week: 'Saturday', start_time: '09:00', end_time: '12:00' },
-        { day_of_week: 'Thursday', start_time: '18:00', end_time: '20:00' }
-      ],
-      location: {
-        city: 'San Francisco',
-        state: 'CA'
-      }
-    },
-    {
-      id: '550e8400-e29b-41d4-a716-446655440102',
-      name: 'Mike Rodriguez',
-      skill_level: 4.2,
-      game_styles: ['Singles', 'Competitive'],
-      is_verified: true,
-      is_new_to_area: false,
-      gender: 'Male',
-      photo: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=400&h=400&fit=crop&crop=face',
-      bio: 'Tennis coach and USTA tournament player. Happy to help beginners improve their game.',
-      preferred_times: [
-        { day_of_week: 'Saturday', start_time: '09:00', end_time: '12:00' },
-        { day_of_week: 'Thursday', start_time: '18:00', end_time: '20:00' }
-      ],
-      location: {
-        city: 'San Francisco',
-        state: 'CA'
-      }
-    },
-    {
-      id: '550e8400-e29b-41d4-a716-446655440103',
-      name: 'Emma Johnson',
-      skill_level: 3.8,
-      game_styles: ['Doubles', 'Social'],
-      is_verified: true,
-      is_new_to_area: true,
-      gender: 'Female',
-      photo: 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=400&fit=crop&crop=face',
-      bio: 'Weekend warrior who loves doubles. New to the city and looking to meet tennis friends!',
-      preferred_times: [
-        { day_of_week: 'Saturday', start_time: '09:00', end_time: '12:00' },
-        { day_of_week: 'Sunday', start_time: '10:00', end_time: '14:00' }
-      ],
-      location: {
-        city: 'San Francisco',
-        state: 'CA'
-      }
-    },
-    {
-      id: '550e8400-e29b-41d4-a716-446655440104',
-      name: 'David Kim',
-      skill_level: 4.0,
-      game_styles: ['Singles', 'Doubles'],
-      is_verified: true,
-      is_new_to_area: false,
-      gender: 'Male',
-      photo: 'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=400&h=400&fit=crop&crop=face',
-      bio: 'Software engineer by day, tennis enthusiast by evening. Love playing at Presidio courts.',
-      preferred_times: [
-        { day_of_week: 'Saturday', start_time: '09:00', end_time: '12:00' },
-        { day_of_week: 'Tuesday', start_time: '18:00', end_time: '20:00' }
-      ],
-      location: {
-        city: 'San Francisco',
-        state: 'CA'
-      }
-    },
-    {
-      id: '550e8400-e29b-41d4-a716-446655440105',
-      name: 'Lisa Patel',
-      skill_level: 3.5,
-      game_styles: ['Doubles', 'Social'],
-      is_verified: true,
-      is_new_to_area: false,
-      gender: 'Female',
-      photo: 'https://images.unsplash.com/photo-1582655008695-f3d1a00e1b1c?w=400&h=400&fit=crop&crop=face',
-      bio: 'Beginner-friendly player who enjoys social tennis. Always up for a fun rally session!',
-      preferred_times: [
-        { day_of_week: 'Saturday', start_time: '09:00', end_time: '12:00' },
-        { day_of_week: 'Sunday', start_time: '10:00', end_time: '14:00' }
-      ],
-      location: {
-        city: 'San Francisco',
-        state: 'CA'
-      }
-    },
-    {
-      id: '550e8400-e29b-41d4-a716-446655440106',
-      name: 'Alex Thompson',
-      skill_level: 4.3,
-      game_styles: ['Singles', 'Competitive'],
-      is_verified: true,
-      is_new_to_area: false,
-      gender: 'Male',
-      photo: 'https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=400&h=400&fit=crop&crop=face',
-      bio: 'Competitive player with 15+ years experience. Looking for regular hitting partners.',
-      preferred_times: [
-        { day_of_week: 'Saturday', start_time: '09:00', end_time: '12:00' },
-        { day_of_week: 'Tuesday', start_time: '18:00', end_time: '20:00' }
-      ],
-      location: {
-        city: 'San Francisco',
-        state: 'CA'
-      }
-    },
-    {
-      id: '550e8400-e29b-41d4-a716-446655440107',
-      name: 'Maria Garcia',
-      skill_level: 3.9,
-      game_styles: ['Doubles', 'Social'],
-      is_verified: true,
-      is_new_to_area: false,
-      gender: 'Female',
-      photo: 'https://images.unsplash.com/photo-1552308995-2baac1ad5490?w=400&h=400&fit=crop&crop=face',
-      bio: 'Tennis mom who plays while kids are at school. Love morning matches and clinics.',
-      preferred_times: [
-        { day_of_week: 'Saturday', start_time: '09:00', end_time: '12:00' },
-        { day_of_week: 'Sunday', start_time: '10:00', end_time: '14:00' }
-      ],
-      location: {
-        city: 'San Francisco',
-        state: 'CA'
-      }
-    },
-    {
-      id: '550e8400-e29b-41d4-a716-446655440108',
-      name: 'James Wilson',
-      skill_level: 4.1,
-      game_styles: ['Singles', 'Competitive'],
-      is_verified: true,
-      is_new_to_area: false,
-      gender: 'Male',
-      photo: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop&crop=face',
-      bio: 'Former high school tennis captain. Enjoy both singles and doubles, prefer early morning games.',
-      preferred_times: [
-        { day_of_week: 'Saturday', start_time: '09:00', end_time: '12:00' },
-        { day_of_week: 'Tuesday', start_time: '18:00', end_time: '20:00' }
-      ],
-      location: {
-        city: 'San Francisco',
-        state: 'CA'
-      }
-    },
-    {
-      id: '550e8400-e29b-41d4-a716-446655440109',
-      name: 'Rachel Brown',
-      skill_level: 3.7,
-      game_styles: ['Doubles', 'Social'],
-      is_verified: true,
-      is_new_to_area: false,
-      gender: 'Female',
-      photo: 'https://images.unsplash.com/photo-1564415637254-92c6e4b0b6e3?w=400&h=400&fit=crop&crop=face',
-      bio: 'Recreational player who loves the social aspect of tennis. Always down for post-game coffee!',
-      preferred_times: [
-        { day_of_week: 'Saturday', start_time: '09:00', end_time: '12:00' },
-        { day_of_week: 'Sunday', start_time: '10:00', end_time: '14:00' }
-      ],
-      location: {
-        city: 'San Francisco',
-        state: 'CA'
-      }
-    },
-    {
-      id: '550e8400-e29b-41d4-a716-446655440110',
+      id: '1',
       name: 'Chris Lee',
-      skill_level: 4.4,
-      game_styles: ['Singles', 'Competitive'],
-      is_verified: true,
-      is_new_to_area: false,
+      email: 'chris@example.com',
+      skillLevel: 4.0,
+      location: { city: 'San Francisco', state: 'CA' },
+      gameStyles: ['Singles', 'Doubles'],
       gender: 'Male',
-      photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face',
-      bio: 'Tournament player and tennis instructor. Available for lessons and competitive matches.',
-      preferred_times: [
-        { day_of_week: 'Saturday', start_time: '09:00', end_time: '12:00' },
-        { day_of_week: 'Thursday', start_time: '18:00', end_time: '20:00' }
+      isNewToArea: false,
+      isVerified: true,
+      bio: 'Chris is a passionate tennis player with a 4.0 NTRP rating. He enjoys both singles and doubles matches and is looking for competitive partners in the San Francisco area. Available to play on weekends and evenings.',
+      preferredTimes: [
+        { dayOfWeek: 'Saturday', startTime: '09:00', endTime: '12:00' },
+        { dayOfWeek: 'Sunday', startTime: '14:00', endTime: '17:00' },
+        { dayOfWeek: 'Wednesday', startTime: '18:00', endTime: '20:00' }
       ],
-      location: {
-        city: 'San Francisco',
-        state: 'CA'
-      }
-    }
-  ], []);
-
-  // Extract complex expressions to avoid ESLint warnings
-  const gameStylesString = filters.gameStyles.join(',');
-  const preferredDaysString = filters.preferredDays.join(',');
-
-  // Define the fetch function for the custom hook
-  const fetchPlayersFunction = useCallback(async (location) => {
-    // If in demo mode, return mock data
-    if (demoMode) {
-      // Add a small delay to simulate real API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return getMockPlayers();
-    }
-
-    // Check if user is authenticated
-    const token = localStorage.getItem('token');
-    if (!token) {
-      console.warn('User not authenticated in live mode');
-      throw new Error('Please log in to see nearby players');
-    }
-
-    // Build query parameters
-    let queryParams = new URLSearchParams({
-      latitude: location.latitude,
-      longitude: location.longitude,
-      radius: filters.radius
-    });
-
-    if (filters.skillLevel) {
-      queryParams.append('skill_level', filters.skillLevel);
-    }
-
-    if (filters.gameStyles.length > 0) {
-      queryParams.append('game_styles', gameStylesString);
-    }
-
-    if (filters.preferredDays.length > 0) {
-      queryParams.append('preferred_days', preferredDaysString);
-    }
-
-    if (filters.isNewcomer) {
-      queryParams.append('is_newcomer', 'true');
-    }
-
-    if (filters.gender) {
-      queryParams.append('gender', filters.gender);
-    }
-
-    try {
-      // Fetch players from API
-      const response = await api.get(`/users/nearby?${queryParams}`);
-      const data = response.data;
-      
-      // Store metadata for UI feedback
-      if (data.metadata) {
-        setMetadata(data.metadata);
-      }
-      
-      return data.users || [];
-    } catch (error) {
-      console.error('API call failed in live mode:', error);
-      throw new Error('Failed to load players. Please check your connection and try again.');
-    }
-  }, [demoMode, filters.skillLevel, gameStylesString, preferredDaysString, filters.isNewcomer, filters.gender, filters.radius, filters.gameStyles.length, filters.preferredDays.length, getMockPlayers]);
-
-  // Use the custom hook
-  const { data: players, loading, error, refetch, setData: setPlayers } = useFetch(
-    fetchPlayersFunction,
-    [],
+      distance: 2.5
+    },
     {
-      useLocation: !demoMode, // Only use location when not in demo mode
-      autoFetch: true
+      id: '2',
+      name: 'Sophia Chen',
+      email: 'sophia@example.com',
+      skillLevel: 3.5,
+      location: { city: 'San Francisco', state: 'CA' },
+      gameStyles: ['Singles', 'Doubles'],
+      gender: 'Female',
+      isNewToArea: true,
+      isVerified: true,
+      bio: 'Sophia is a versatile tennis player with a 3.5 NTRP rating. She enjoys both singles and doubles matches and is looking for competitive partners in the San Francisco area. Available to play on weekends and evenings.',
+      preferredTimes: [
+        { dayOfWeek: 'Saturday', startTime: '10:00', endTime: '13:00' },
+        { dayOfWeek: 'Tuesday', startTime: '17:00', endTime: '19:00' },
+        { dayOfWeek: 'Thursday', startTime: '17:00', endTime: '19:00' }
+      ],
+      distance: 5.0
+    },
+    {
+      id: '3',
+      name: 'Ethan Wong',
+      email: 'ethan@example.com',
+      skillLevel: 4.5,
+      location: { city: 'San Francisco', state: 'CA' },
+      gameStyles: ['Singles', 'Competitive'],
+      gender: 'Male',
+      isNewToArea: false,
+      isVerified: false,
+      bio: 'Ethan is a versatile tennis player with a 4.5 NTRP rating. He enjoys both singles and doubles matches and is looking for competitive partners in the San Francisco area. Available to play on weekends and evenings.',
+      preferredTimes: [
+        { dayOfWeek: 'Monday', startTime: '06:00', endTime: '08:00' },
+        { dayOfWeek: 'Friday', startTime: '17:30', endTime: '19:30' },
+        { dayOfWeek: 'Sunday', startTime: '08:00', endTime: '11:00' }
+      ],
+      distance: 8.2
+    },
+    {
+      id: '4',
+      name: 'Olivia Kim',
+      email: 'olivia@example.com',
+      skillLevel: 3.0,
+      location: { city: 'San Francisco', state: 'CA' },
+      gameStyles: ['Doubles', 'Social'],
+      gender: 'Female',
+      isNewToArea: true,
+      isVerified: true,
+      bio: 'Olivia is a versatile tennis player with a 3.0 NTRP rating. She enjoys both singles and doubles matches and is looking for competitive partners in the San Francisco area. Available to play on weekends and evenings.',
+      preferredTimes: [
+        { dayOfWeek: 'Saturday', startTime: '14:00', endTime: '16:00' },
+        { dayOfWeek: 'Sunday', startTime: '10:00', endTime: '12:00' },
+        { dayOfWeek: 'Wednesday', startTime: '19:00', endTime: '21:00' }
+      ],
+      distance: 12.5
+    },
+    {
+      id: '5',
+      name: 'Marcus Johnson',
+      email: 'marcus@example.com',
+      skillLevel: 3.5,
+      location: { city: 'Oakland', state: 'CA' },
+      gameStyles: ['Singles', 'Doubles'],
+      gender: 'Male',
+      isNewToArea: false,
+      isVerified: true,
+      bio: 'Marcus loves playing tennis and is always looking for new hitting partners. He has been playing for 5 years and enjoys both casual and competitive matches.',
+      preferredTimes: [
+        { dayOfWeek: 'Tuesday', startTime: '18:00', endTime: '20:00' },
+        { dayOfWeek: 'Thursday', startTime: '18:00', endTime: '20:00' },
+        { dayOfWeek: 'Saturday', startTime: '09:00', endTime: '12:00' }
+      ],
+      distance: 15.3
+    },
+    {
+      id: '6',
+      name: 'Isabella Rodriguez',
+      email: 'isabella@example.com',
+      skillLevel: 4.0,
+      location: { city: 'Berkeley', state: 'CA' },
+      gameStyles: ['Doubles', 'Social'],
+      gender: 'Female',
+      isNewToArea: true,
+      isVerified: false,
+      bio: 'Isabella recently moved to the Bay Area and is excited to find new tennis partners. She prefers doubles play and enjoys the social aspect of tennis.',
+      preferredTimes: [
+        { dayOfWeek: 'Friday', startTime: '17:00', endTime: '19:00' },
+        { dayOfWeek: 'Saturday', startTime: '10:00', endTime: '13:00' },
+        { dayOfWeek: 'Sunday', startTime: '15:00', endTime: '17:00' }
+      ],
+      distance: 18.7
     }
-  );
+  ];
+
+  // Real API call for live mode
+  const fetchNearbyPlayers = async () => {
+    setLoading(true);
+    setError('');
+    
+    try {
+      const token = localStorage.getItem('authToken');
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      
+      // Build query parameters
+      const params = new URLSearchParams({
+        radius: filters.radius.toString(),
+        ...(filters.skillLevel && { skill_level: filters.skillLevel }),
+        ...(filters.gender && { gender: filters.gender }),
+        ...(filters.isNewcomer && { is_newcomer: 'true' }),
+        ...(filters.gameStyles.length > 0 && { game_styles: filters.gameStyles.join(',') }),
+        ...(filters.preferredDays.length > 0 && { preferred_days: filters.preferredDays.join(',') })
+      });
+
+      const response = await fetch(`${apiUrl}/api/users/nearby?${params}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Handle the real API response
+      const realPlayers = data.users || [];
+      const metadata = data.metadata || {
+        total_users: realPlayers.length,
+        users_in_range: realPlayers.filter(p => p.distance <= filters.radius).length,
+        users_out_of_range: realPlayers.filter(p => p.distance > filters.radius).length,
+        search_radius: filters.radius,
+        showing_fallback: false
+      };
+
+      setPlayers(realPlayers);
+      setSearchMetadata(metadata);
+
+    } catch (err) {
+      console.error('Error fetching nearby players:', err);
+      setError('Failed to load players. Please check your connection and try again.');
+      setPlayers([]);
+      setSearchMetadata({
+        total_users: 0,
+        users_in_range: 0,
+        users_out_of_range: 0,
+        search_radius: filters.radius,
+        showing_fallback: false
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isDemoMode) {
+      const allPlayers = getMockPlayers();
+      const filteredPlayers = applyFilters(allPlayers);
+      
+      // Implement fallback behavior: if no players found nearby, show all players
+      if (filteredPlayers.length === 0) {
+        setPlayers(allPlayers);
+        setSearchMetadata({
+          total_users: allPlayers.length,
+          users_in_range: 0,
+          users_out_of_range: allPlayers.length,
+          search_radius: filters.radius,
+          showing_fallback: true
+        });
+      } else {
+        setPlayers(filteredPlayers);
+        const inRange = filteredPlayers.filter(p => p.distance <= filters.radius).length;
+        const outOfRange = filteredPlayers.filter(p => p.distance > filters.radius).length;
+        
+        setSearchMetadata({
+          total_users: filteredPlayers.length,
+          users_in_range: inRange,
+          users_out_of_range: outOfRange,
+          search_radius: filters.radius,
+          showing_fallback: false
+        });
+      }
+    } else {
+      // In live mode, fetch real users from API
+      fetchNearbyPlayers();
+    }
+  }, [isDemoMode, filters]);
+
+  const applyFilters = (playerList) => {
+    return playerList.filter(player => {
+      if (filters.skillLevel && Math.abs(player.skillLevel - parseFloat(filters.skillLevel)) > 0.5) {
+        return false;
+      }
+      if (filters.gameStyles.length > 0 && !filters.gameStyles.some(style => player.gameStyles.includes(style))) {
+        return false;
+      }
+      if (filters.preferredDays.length > 0 && !filters.preferredDays.some(day => 
+        player.preferredTimes.some(time => time.dayOfWeek === day)
+      )) {
+        return false;
+      }
+      if (filters.gender && player.gender !== filters.gender) {
+        return false;
+      }
+      if (filters.isNewcomer && !player.isNewToArea) {
+        return false;
+      }
+      return true;
+    });
+  };
 
   const handleFilterChange = (e) => {
     const { name, value, type, checked } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleMultiSelectChange = (filterName, value) => {
+    setFilters(prev => {
+      const currentValues = [...prev[filterName]];
+      if (currentValues.includes(value)) {
+        return { ...prev, [filterName]: currentValues.filter(v => v !== value) };
+      } else {
+        return { ...prev, [filterName]: [...currentValues, value] };
+      }
+    });
+  };
+
+  const handleStylesDropdownToggle = (e) => {
+    e.stopPropagation();
+    const newState = !stylesDropdownOpen;
+    setStylesDropdownOpen(newState);
+    setDaysDropdownOpen(false); // Close other dropdown
     
-    if (type === 'checkbox') {
-      setFilters(prev => ({ ...prev, [name]: checked }));
-    } else {
-      setFilters(prev => ({ ...prev, [name]: value }));
+    // Update filter group z-index
+    const filterGroup = e.target.closest('.filter-group');
+    if (filterGroup) {
+      if (newState) {
+        filterGroup.classList.add('dropdown-open');
+      } else {
+        filterGroup.classList.remove('dropdown-open');
+      }
     }
   };
 
-  const handleGameStyleChange = (style) => {
-    setFilters(prev => {
-      const gameStyles = [...prev.gameStyles];
-      if (gameStyles.includes(style)) {
-        return { ...prev, gameStyles: gameStyles.filter(s => s !== style) };
+  const handleDaysDropdownToggle = (e) => {
+    e.stopPropagation();
+    const newState = !daysDropdownOpen;
+    setDaysDropdownOpen(newState);
+    setStylesDropdownOpen(false); // Close other dropdown
+    
+    // Update filter group z-index
+    const filterGroup = e.target.closest('.filter-group');
+    if (filterGroup) {
+      if (newState) {
+        filterGroup.classList.add('dropdown-open');
       } else {
-        return { ...prev, gameStyles: [...gameStyles, style] };
+        filterGroup.classList.remove('dropdown-open');
       }
-    });
+    }
   };
 
-  const handleDayChange = (day) => {
-    setFilters(prev => {
-      const preferredDays = [...prev.preferredDays];
-      if (preferredDays.includes(day)) {
-        return { ...prev, preferredDays: preferredDays.filter(d => d !== day) };
-      } else {
-        return { ...prev, preferredDays: [...preferredDays, day] };
-      }
-    });
+  const handleStyleOptionClick = (e, style) => {
+    e.stopPropagation();
+    handleMultiSelectChange('gameStyles', style);
+  };
+
+  const handleDayOptionClick = (e, day) => {
+    e.stopPropagation();
+    handleMultiSelectChange('preferredDays', day);
   };
 
   const handleApplyFilters = () => {
-    refetch();
-  };
-
-  // Note: Removed useEffect that was causing infinite loop
-  // The useFetch hook will automatically refetch when fetchPlayersFunction changes
-  // ESLint warnings have been resolved by extracting complex expressions and adding all dependencies
-
-  const handleLikePlayer = async (playerId) => {
-    try {
-      const response = await api.post(`/users/like/${playerId}`);
-      if (response.data.is_match) {
-        alert(response.data.message);
-      } else {
-        // Update UI to show the player has been liked
-        setPlayers(prev => 
-          prev.map(player => 
-            player.id === playerId ? { ...player, liked: true } : player
-          )
-        );
-      }
-    } catch (err) {
-      console.error('Error liking player:', err);
-      alert('Failed to like player. Please try again.');
+    if (!isDemoMode) {
+      fetchNearbyPlayers();
     }
   };
 
-  // Generate cartoon animal avatar based on user ID
+  const handleLikePlayer = async (playerId) => {
+    try {
+      if (!isDemoMode) {
+        // Make real API call to like player
+        const token = localStorage.getItem('authToken');
+        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+        
+        await fetch(`${apiUrl}/api/users/like`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ target_user_id: playerId }),
+        });
+      }
+      
+      setPlayers(prev => prev.map(player => 
+        player.id === playerId 
+          ? { ...player, liked: !player.liked }
+          : player
+      ));
+      
+      console.log('Liked player:', playerId);
+    } catch (error) {
+      console.error('Error liking player:', error);
+    }
+  };
+
   const getAnimalAvatar = (userId, name) => {
     const animals = [
       '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', 
       '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔',
-      '🐧', '🐦', '🐤', '🦆', '🦅', '🦉', '🐺', '🐗'
+      '🐧', '🐦', '🐤', '🦆', '🦅', '🦉', '🦇', '🐺',
+      '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞'
     ];
     
-    // Use a simple hash of the user ID to consistently pick the same animal
-    const hash = userId ? userId.split('').reduce((a, b) => {
-      a = ((a << 5) - a) + b.charCodeAt(0);
-      return a & a;
-    }, 0) : name.length;
+    // Use a simple hash of the user ID to consistently assign an animal
+    let hash = 0;
+    for (let i = 0; i < userId.length; i++) {
+      const char = userId.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
     
     const animalIndex = Math.abs(hash) % animals.length;
-    const animal = animals[animalIndex];
-    
-    // Create a colorful background
-    const colors = [
-      '#FFB6C1', '#87CEEB', '#98FB98', '#F0E68C', '#DDA0DD',
-      '#F4A460', '#87CEFA', '#90EE90', '#FFE4B5', '#D8BFD8'
-    ];
-    const colorIndex = Math.abs(hash) % colors.length;
-    const bgColor = colors[colorIndex];
-    
-    // Return a simple data URL with URL encoding instead of base64
-    const svg = `<svg width="150" height="150" xmlns="http://www.w3.org/2000/svg"><rect width="150" height="150" fill="${bgColor}"/><text x="75" y="85" font-size="60" text-anchor="middle" dominant-baseline="middle">${animal}</text></svg>`;
-    
-    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    return animals[animalIndex];
   };
 
-  // Helper function to format time from various formats
   const formatTime = (timeString) => {
-    if (!timeString) return '00:00';
-    
-    // If it's already in HH:MM format, return as is
-    if (/^\d{2}:\d{2}$/.test(timeString)) {
-      return timeString;
-    }
-    
-    // If it's a full timestamp (e.g., "0000-01-01T09:00:00Z"), extract time
-    if (timeString.includes('T')) {
-      const timePart = timeString.split('T')[1];
-      if (timePart) {
-        return timePart.substring(0, 5); // Get HH:MM part
-      }
-    }
-    
-    // If it's just time with seconds (e.g., "09:00:00"), remove seconds
-    if (/^\d{2}:\d{2}:\d{2}$/.test(timeString)) {
-      return timeString.substring(0, 5);
-    }
-    
-    // Fallback
-    return timeString;
+    const [hours, minutes] = timeString.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
   };
 
-  if (loading) {
-    return (
-      <div className="loading">
-        <div className="loading-spinner"></div>
-        <div>🎾 Finding tennis players near you...</div>
-      </div>
-    );
-  }
+  const getSelectedItemsDisplay = (items, placeholder) => {
+    if (items.length === 0) return placeholder;
+    if (items.length === 1) return items[0];
+    return `${items.length} selected`;
+  };
 
-  if (error) {
-    return (
-      <div className="error">
-        <div className="error-content">
-          <h2>⚠️ {error}</h2>
-          {!demoMode && error.includes('log in') && (
-            <div className="error-actions">
-              <p>You need to be logged in to see real players near you.</p>
-              <button 
-                className="demo-toggle-button"
-                onClick={() => setDemoMode(true)}
-              >
-                🎭 Switch to Demo Mode
-              </button>
-            </div>
-          )}
-          {!demoMode && error.includes('connection') && (
-            <div className="error-actions">
-              <p>Please check your internet connection and try again.</p>
-              <button 
-                className="retry-button"
-                onClick={() => refetch()}
-              >
-                🔄 Retry
-              </button>
-              <button 
-                className="demo-toggle-button"
-                onClick={() => setDemoMode(true)}
-              >
-                🎭 Switch to Demo Mode
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.multi-select-dropdown')) {
+        setStylesDropdownOpen(false);
+        setDaysDropdownOpen(false);
+        // Remove dropdown-open class from all filter groups
+        document.querySelectorAll('.filter-group.dropdown-open').forEach(group => {
+          group.classList.remove('dropdown-open');
+        });
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <div className="nearby-players-container">
-      {/* Sidebar Filters */}
+      {/* Modern Filter Sidebar */}
       <div className="filters-sidebar">
-        <h2>Find Your Perfect Tennis Partner 🎾</h2>
+        <h2>Players Near You</h2>
         
+        {/* Demo Mode Toggle */}
+        <div className="filter-group" style={{ marginBottom: '24px' }}>
+          <button
+            className={`demo-toggle-button ${isDemoMode ? 'demo-active' : 'live-active'}`}
+            onClick={() => setIsDemoMode(!isDemoMode)}
+          >
+            {isDemoMode ? '🎭 Demo Mode' : '🔴 Live Mode'}
+          </button>
+          <div className="demo-indicator">
+            {isDemoMode ? 'Showing sample data' : 'Connected to live data'}
+          </div>
+        </div>
+
+        {/* NTRP Rating Filter */}
         <div className="filter-group" data-filter="skill">
-          <label htmlFor="skillLevel">Skill Level (NTRP)</label>
+          <label>NTRP Rating</label>
           <select
-            id="skillLevel"
             name="skillLevel"
             value={filters.skillLevel}
             onChange={handleFilterChange}
           >
-            <option value="">All Levels</option>
-            {skillLevels.map(level => (
-              <option key={level} value={level}>{level}</option>
-            ))}
+            <option value="">Any Level</option>
+            <option value="2.0">2.0</option>
+            <option value="2.5">2.5</option>
+            <option value="3.0">3.0</option>
+            <option value="3.5">3.5</option>
+            <option value="4.0">4.0</option>
+            <option value="4.5">4.5</option>
+            <option value="5.0">5.0</option>
+            <option value="5.5">5.5+</option>
           </select>
         </div>
 
+        {/* Search Radius Filter */}
         <div className="filter-group" data-filter="radius">
-          <label htmlFor="radius">Search Radius</label>
+          <label>Search Radius</label>
           <input
             type="range"
-            id="radius"
             name="radius"
             min="1"
             max="50"
             value={filters.radius}
             onChange={handleFilterChange}
           />
-          <div className="range-display">{filters.radius} miles</div>
+          <div className="range-display">
+            <span>1 mi</span>
+            <span>{filters.radius} miles</span>
+            <span>50 mi</span>
+          </div>
         </div>
 
+        {/* Game Style Filter - Multi-select dropdown */}
         <div className="filter-group" data-filter="styles">
-          <label>Game Styles</label>
-          <div className="checkbox-group">
-            {gameStyleOptions.map(style => (
-              <label 
-                key={style} 
-                htmlFor={`gameStyle-${style}`}
-                className={`checkbox-label ${filters.gameStyles.includes(style) ? 'checked' : ''}`}
-              >
-                <input
-                  type="checkbox"
-                  id={`gameStyle-${style}`}
-                  name={`gameStyle-${style}`}
-                  checked={filters.gameStyles.includes(style)}
-                  onChange={() => handleGameStyleChange(style)}
-                />
-                {style}
-              </label>
-            ))}
+          <label>Style</label>
+          <div className={`multi-select-dropdown ${stylesDropdownOpen ? 'open' : ''}`}>
+            <div className="multi-select-trigger" onClick={handleStylesDropdownToggle}>
+              <span className={`selected-items-display ${filters.gameStyles.length > 0 ? 'has-selections' : ''}`}>
+                {getSelectedItemsDisplay(filters.gameStyles, 'Select styles')}
+              </span>
+            </div>
+            {stylesDropdownOpen && (
+              <div className="multi-select-options">
+                {['Singles', 'Doubles', 'Social', 'Competitive'].map(style => (
+                  <div 
+                    key={style} 
+                    className={`multi-select-option ${filters.gameStyles.includes(style) ? 'selected' : ''}`}
+                    onClick={(e) => handleStyleOptionClick(e, style)}
+                  >
+                    {style}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
+        {/* Preferred Days Filter - Multi-select dropdown */}
         <div className="filter-group" data-filter="days">
-          <label>Preferred Days</label>
-          <div className="checkbox-group">
-            {dayOptions.map(day => (
-              <label 
-                key={day} 
-                htmlFor={`day-${day}`}
-                className={`checkbox-label ${filters.preferredDays.includes(day) ? 'checked' : ''}`}
-              >
-                <input
-                  type="checkbox"
-                  id={`day-${day}`}
-                  name={`day-${day}`}
-                  checked={filters.preferredDays.includes(day)}
-                  onChange={() => handleDayChange(day)}
-                />
-                {day.substring(0, 3)}
-              </label>
-            ))}
+          <label>Availability</label>
+          <div className={`multi-select-dropdown ${daysDropdownOpen ? 'open' : ''}`}>
+            <div className="multi-select-trigger" onClick={handleDaysDropdownToggle}>
+              <span className={`selected-items-display ${filters.preferredDays.length > 0 ? 'has-selections' : ''}`}>
+                {getSelectedItemsDisplay(filters.preferredDays, 'Select days')}
+              </span>
+            </div>
+            {daysDropdownOpen && (
+              <div className="multi-select-options">
+                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
+                  <div 
+                    key={day} 
+                    className={`multi-select-option ${filters.preferredDays.includes(day) ? 'selected' : ''}`}
+                    onClick={(e) => handleDayOptionClick(e, day)}
+                  >
+                    {day}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
+        {/* Gender Preference Filter */}
         <div className="filter-group" data-filter="gender">
-          <label htmlFor="gender">Gender Preference</label>
+          <label>Gender Preference</label>
           <select
-            id="gender"
             name="gender"
             value={filters.gender}
             onChange={handleFilterChange}
           >
-            <option value="">No Preference</option>
-            <option value="Female">Women Only</option>
-            <option value="Male">Men Only</option>
+            <option value="">Any</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
           </select>
         </div>
 
+        {/* Newcomer Filter */}
         <div className="filter-group" data-filter="newcomer">
-          <label htmlFor="isNewcomer" className={`checkbox-label ${filters.isNewcomer ? 'checked' : ''}`}>
+          <label className={`checkbox-label ${filters.isNewcomer ? 'checked' : ''}`}>
             <input
               type="checkbox"
-              id="isNewcomer"
               name="isNewcomer"
               checked={filters.isNewcomer}
               onChange={handleFilterChange}
             />
-            Show only newcomers to the area
+            New to Area Only
           </label>
         </div>
 
         <button className="apply-filters-button" onClick={handleApplyFilters}>
-          🔍 Apply Filters
+          Apply Filters
         </button>
       </div>
 
       {/* Main Content */}
       <div className="main-content">
-        <div className="page-header">
-          <h1 className="page-title">Players Near You</h1>
-          <button 
-            className={`demo-toggle-button ${demoMode ? 'demo-active' : 'live-active'}`}
-            onClick={() => setDemoMode(!demoMode)}
-          >
-            {demoMode ? '🎭 Demo Mode - Click for Live Data' : '🌐 Live Mode - Click for Demo'}
-          </button>
-        </div>
-        
         <div className="content-header">
           <div className="results-count">
-            {players.length === 0 ? 'No players found' : `${players.length} players found`}
-            {demoMode && <span className="demo-indicator"> (Demo Data)</span>}
+            {players.length} player{players.length !== 1 ? 's' : ''} found
           </div>
-          
-          {/* Show metadata when available */}
-          {metadata && !demoMode && (
-            <div className="search-metadata">
-              {metadata.showing_fallback && (
-                <div className="fallback-notice">
-                  ⚠️ No players found within {metadata.search_radius} miles. 
-                  Showing {metadata.total_users} players from a wider area - they may be willing to travel!
-                </div>
-              )}
-              {!metadata.showing_fallback && metadata.users_out_of_range > 0 && (
-                <div className="range-info">
-                  📍 {metadata.users_in_range} players within {metadata.search_radius} miles, 
-                  {metadata.users_out_of_range} additional players shown from wider area
-                </div>
-              )}
-            </div>
-          )}
+          <div className="view-toggle">
+            <button 
+              className={`view-button ${viewMode === 'detailed' ? 'active' : ''}`}
+              onClick={() => setViewMode('detailed')}
+            >
+              Detailed
+            </button>
+            <button 
+              className={`view-button ${viewMode === 'compact' ? 'active' : ''}`}
+              onClick={() => setViewMode('compact')}
+            >
+              Compact
+            </button>
+          </div>
         </div>
-        
-        <div className="players-list">
-          {players.length === 0 ? (
-            <div className="no-players">
-              🎾 No players found matching your criteria. Try adjusting your filters!
+
+        {/* Search Metadata */}
+        {searchMetadata && (
+          <div className="search-metadata">
+            {searchMetadata.showing_fallback && (
+              <div className="fallback-notice">
+                No players found within {searchMetadata.search_radius} miles. 
+                Showing {searchMetadata.users_out_of_range} players from nearby areas.
+              </div>
+            )}
+            <div className="range-info">
+              {searchMetadata.users_in_range} players within {searchMetadata.search_radius} miles, 
+              {searchMetadata.users_out_of_range} players outside range
             </div>
-          ) : (
-            players.map(player => (
+          </div>
+        )}
+
+        {/* Players List */}
+        {loading ? (
+          <div className="loading">
+            <div className="loading-spinner"></div>
+            <p>Finding players near you...</p>
+          </div>
+        ) : error ? (
+          <div className="error">
+            <p>Error loading players: {error}</p>
+          </div>
+        ) : players.length === 0 ? (
+          <div className="no-players">
+            <p>No players found matching your criteria.</p>
+            <p>Try adjusting your filters or expanding your search radius.</p>
+          </div>
+        ) : (
+          <div className={`players-list ${viewMode}`}>
+            {players.map(player => (
               <div key={player.id} className="player-card">
-                <div className="player-photo">
-                  <img 
-                    src={player.photo || getAnimalAvatar(player.id, player.name)} 
-                    alt={player.name}
-                    onError={(e) => {
-                      e.target.src = getAnimalAvatar(player.id, player.name);
-                    }}
-                  />
-                  <div className="skill-badge">{player.skill_level || 'N/A'} NTRP</div>
+                <div className={`distance-badge ${player.distance <= filters.radius ? 'in-range' : 'out-of-range'}`}>
+                  {player.distance} mi
                 </div>
                 
+                <div className="player-photo">
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    background: `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '2rem',
+                    borderRadius: '50%'
+                  }}>
+                    {getAnimalAvatar(player.id, player.name)}
+                  </div>
+                  <div className="skill-badge">{player.skillLevel}</div>
+                </div>
+
                 <div className="player-info">
                   <div className="player-header">
                     <h3>{player.name}</h3>
                   </div>
-                  
+
                   <div className="player-badges">
-                    {player.is_verified && <span className="badge verified">✓ Verified</span>}
-                    {player.is_new_to_area && <span className="badge newcomer">🏠 New to Area</span>}
+                    {player.isVerified && <span className="badge verified">✓ Verified</span>}
+                    {player.isNewToArea && <span className="badge newcomer">🆕 New to Area</span>}
                   </div>
-                  
+
                   <div className="player-details">
                     <div className="detail-item">
-                      <strong>🎾</strong> {player.game_styles && player.game_styles.length > 0 ? player.game_styles.join(', ') : 'Not specified'}
+                      <strong>Location</strong>
+                      <span>{player.location.city}, {player.location.state}</span>
                     </div>
                     <div className="detail-item">
-                      <strong>📍</strong> {player.location ? `${player.location.city || 'Unknown'}, ${player.location.state || 'Unknown'}` : 'Location not specified'}
-                      {player.distance && !demoMode && (
-                        <span className={`distance-badge ${player.distance > parseInt(filters.radius) ? 'out-of-range' : 'in-range'}`}>
-                          {player.distance.toFixed(1)} mi
-                        </span>
-                      )}
+                      <strong>Game Styles</strong>
+                      <span>{player.gameStyles.join(', ')}</span>
                     </div>
                   </div>
-                  
-                  {player.bio && (
-                    <div className="player-bio">
-                      <p>"{player.bio}"</p>
-                    </div>
+
+                  {viewMode === 'detailed' && (
+                    <>
+                      <div className="player-bio">
+                        <p>{player.bio}</p>
+                      </div>
+
+                      <div className="availability">
+                        <h4>Available Times</h4>
+                        <ul>
+                          {player.preferredTimes.map((time, index) => (
+                            <li key={index}>
+                              <span className="day">{time.dayOfWeek}</span>
+                              <span className="time">
+                                {formatTime(time.startTime)} - {formatTime(time.endTime)}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </>
                   )}
-                  
-                  <div className="availability">
-                    <h4>Available Times</h4>
-                    <ul>
-                      {player.preferred_times && player.preferred_times.length > 0 ? (
-                        player.preferred_times.map((time, index) => (
-                          <li key={index}>
-                            <span className="day">{time.day_of_week || 'Unknown'}</span>
-                            <span className="time">{formatTime(time.start_time) || '00:00'} - {formatTime(time.end_time) || '00:00'}</span>
-                          </li>
-                        ))
-                      ) : (
-                        <li>
-                          <span className="day">No times specified</span>
-                        </li>
-                      )}
-                    </ul>
+
+                  <div className="player-actions">
+                    <button 
+                      className={`like-button ${player.liked ? 'liked' : ''}`}
+                      onClick={() => handleLikePlayer(player.id)}
+                    >
+                      {player.liked ? '💚 Liked' : '👍 Like Player'}
+                    </button>
                   </div>
-                </div>
-                
-                <div className="player-actions">
-                  <button 
-                    className={`like-button ${player.liked ? 'liked' : ''}`}
-                    onClick={() => handleLikePlayer(player.id)}
-                    disabled={player.liked}
-                  >
-                    {player.liked ? '💚 Liked' : '💖 Like Player'}
-                  </button>
                 </div>
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

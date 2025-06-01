@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -48,7 +49,37 @@ func (h *UserHandler) RegisterUser(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&registrationData); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data: " + err.Error()})
+		return
+	}
+
+	// Validate email format
+	if !strings.Contains(registrationData.Email, "@") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email format"})
+		return
+	}
+
+	// Validate password length
+	if len(registrationData.Password) < 6 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Password must be at least 6 characters long"})
+		return
+	}
+
+	// Validate skill level range
+	if registrationData.SkillLevel < 1.0 || registrationData.SkillLevel > 7.0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Skill level must be between 1.0 and 7.0"})
+		return
+	}
+
+	// Normalize email to lowercase
+	registrationData.Email = strings.ToLower(strings.TrimSpace(registrationData.Email))
+	registrationData.Name = strings.TrimSpace(registrationData.Name)
+
+	// Check if user already exists
+	ctx := context.Background()
+	existingUser, err := h.userRepo.GetByEmail(ctx, registrationData.Email)
+	if err == nil && existingUser != nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "An account with this email already exists"})
 		return
 	}
 
@@ -65,16 +96,30 @@ func (h *UserHandler) RegisterUser(c *gin.Context) {
 	}
 
 	// Create user in the database
-	ctx := context.Background()
-	err := h.userRepo.Create(ctx, &user)
+	err = h.userRepo.Create(ctx, &user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user: " + err.Error()})
+		// Check for specific database errors
+		if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "unique constraint") {
+			c.JSON(http.StatusConflict, gin.H{"error": "An account with this email already exists"})
+			return
+		}
+
+		// Log the actual error for debugging
+		fmt.Printf("User creation error: %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create account. Please try again."})
 		return
 	}
 
 	// Return user without sensitive information
 	user.PasswordHash = "" // Don't expose the password hash
-	c.JSON(http.StatusCreated, user)
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Account created successfully",
+		"user": gin.H{
+			"id":    user.ID,
+			"name":  user.Name,
+			"email": user.Email,
+		},
+	})
 }
 
 // LoginUser handles user login

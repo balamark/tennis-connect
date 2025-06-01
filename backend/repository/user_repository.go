@@ -65,17 +65,34 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
 		return fmt.Errorf("failed to insert user: %w", err)
 	}
 
-	// Insert game styles
+	// Insert game styles - create them if they don't exist
 	for _, style := range user.GameStyles {
 		var styleID uuid.UUID
+
+		// Try to find existing game style
 		err = tx.QueryRowContext(ctx, "SELECT id FROM game_styles WHERE name = $1", style).Scan(&styleID)
 		if err != nil {
-			return fmt.Errorf("failed to find game style '%s': %w", style, err)
+			if err == sql.ErrNoRows {
+				// Game style doesn't exist, create it
+				styleID = uuid.New()
+				_, err = tx.ExecContext(ctx, `
+					INSERT INTO game_styles (id, name) VALUES ($1, $2)
+					ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+					RETURNING id
+				`, styleID, style)
+				if err != nil {
+					return fmt.Errorf("failed to create game style '%s': %w", style, err)
+				}
+			} else {
+				return fmt.Errorf("failed to find game style '%s': %w", style, err)
+			}
 		}
 
+		// Insert user-game style relationship
 		_, err = tx.ExecContext(ctx, `
 			INSERT INTO user_game_styles (user_id, game_style_id)
 			VALUES ($1, $2)
+			ON CONFLICT (user_id, game_style_id) DO NOTHING
 		`, user.ID, styleID)
 		if err != nil {
 			return fmt.Errorf("failed to insert user game style: %w", err)
@@ -231,14 +248,30 @@ func (r *UserRepository) Update(ctx context.Context, user *models.User) error {
 	// Insert updated game styles
 	for _, style := range user.GameStyles {
 		var styleID uuid.UUID
+
+		// Try to find existing game style
 		err = tx.QueryRowContext(ctx, "SELECT id FROM game_styles WHERE name = $1", style).Scan(&styleID)
 		if err != nil {
-			return fmt.Errorf("failed to find game style '%s': %w", style, err)
+			if err == sql.ErrNoRows {
+				// Game style doesn't exist, create it
+				styleID = uuid.New()
+				_, err = tx.ExecContext(ctx, `
+					INSERT INTO game_styles (id, name) VALUES ($1, $2)
+					ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+					RETURNING id
+				`, styleID, style)
+				if err != nil {
+					return fmt.Errorf("failed to create game style '%s': %w", style, err)
+				}
+			} else {
+				return fmt.Errorf("failed to find game style '%s': %w", style, err)
+			}
 		}
 
 		_, err = tx.ExecContext(ctx, `
 			INSERT INTO user_game_styles (user_id, game_style_id)
 			VALUES ($1, $2)
+			ON CONFLICT (user_id, game_style_id) DO NOTHING
 		`, user.ID, styleID)
 		if err != nil {
 			return fmt.Errorf("failed to insert user game style: %w", err)
