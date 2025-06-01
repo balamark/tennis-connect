@@ -251,27 +251,29 @@ const Register = () => {
             <label>Game Styles:</label>
             <div className="checkbox-group">
               {gameStyleOptions.map(style => (
-                <label key={style} className="checkbox-label">
+                <label key={style} className="checkbox-label" style={{ cursor: 'pointer' }}>
                   <input
                     type="checkbox"
                     checked={formData.gameStyles.includes(style)}
                     onChange={() => handleGameStyleChange(style)}
+                    style={{ cursor: 'pointer' }}
                   />
-                  {style}
+                  <span style={{ cursor: 'pointer' }}>{style}</span>
                 </label>
               ))}
             </div>
           </div>
           
           <div className="form-group">
-            <label className="checkbox-label">
+            <label className="checkbox-label" style={{ cursor: 'pointer' }}>
               <input
                 type="checkbox"
                 name="isNewToArea"
                 checked={formData.isNewToArea}
                 onChange={handleChange}
+                style={{ cursor: 'pointer' }}
               />
-              I'm new to the area and looking to meet players
+              <span style={{ cursor: 'pointer' }}>I'm new to the area and looking to meet players</span>
             </label>
           </div>
           

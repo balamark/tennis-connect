@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './NearbyPlayers.css';
 
 const NearbyPlayers = () => {
@@ -6,7 +6,7 @@ const NearbyPlayers = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isDemoMode, setIsDemoMode] = useState(true);
-  const [viewMode, setViewMode] = useState('detailed'); // 'detailed' or 'compact'
+  const [viewMode, setViewMode] = useState('compact'); // 'detailed' or 'compact'
   const [searchMetadata, setSearchMetadata] = useState(null);
 
   // Filter states
@@ -135,8 +135,32 @@ const NearbyPlayers = () => {
     }
   ];
 
+  // Apply filters to player list
+  const applyFilters = useCallback((playerList) => {
+    return playerList.filter(player => {
+      if (filters.skillLevel && Math.abs(player.skillLevel - parseFloat(filters.skillLevel)) > 0.5) {
+        return false;
+      }
+      if (filters.gameStyles.length > 0 && !filters.gameStyles.some(style => player.gameStyles.includes(style))) {
+        return false;
+      }
+      if (filters.preferredDays.length > 0 && !filters.preferredDays.some(day => 
+        player.preferredTimes.some(time => time.dayOfWeek === day)
+      )) {
+        return false;
+      }
+      if (filters.gender && player.gender !== filters.gender) {
+        return false;
+      }
+      if (filters.isNewcomer && !player.isNewToArea) {
+        return false;
+      }
+      return true;
+    });
+  }, [filters]);
+
   // Real API call for live mode
-  const fetchNearbyPlayers = async () => {
+  const fetchNearbyPlayers = useCallback(async () => {
     setLoading(true);
     setError('');
     
@@ -171,7 +195,7 @@ const NearbyPlayers = () => {
         if (response.status === 401) {
           throw new Error('Your session has expired. Please log in again to view nearby players.');
         } else if (response.status === 404) {
-          throw new Error('Service temporarily unavailable. Please try again later or switch to Demo mode.');
+          throw new Error('No players found in your area. Try expanding your search radius or adjusting your filters.');
         } else if (response.status === 500) {
           throw new Error('Server error. Please try again later.');
         } else if (response.status >= 500) {
@@ -210,7 +234,7 @@ const NearbyPlayers = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
   useEffect(() => {
     if (isDemoMode) {
@@ -244,30 +268,7 @@ const NearbyPlayers = () => {
       // In live mode, fetch real users from API
       fetchNearbyPlayers();
     }
-  }, [isDemoMode, filters]);
-
-  const applyFilters = (playerList) => {
-    return playerList.filter(player => {
-      if (filters.skillLevel && Math.abs(player.skillLevel - parseFloat(filters.skillLevel)) > 0.5) {
-        return false;
-      }
-      if (filters.gameStyles.length > 0 && !filters.gameStyles.some(style => player.gameStyles.includes(style))) {
-        return false;
-      }
-      if (filters.preferredDays.length > 0 && !filters.preferredDays.some(day => 
-        player.preferredTimes.some(time => time.dayOfWeek === day)
-      )) {
-        return false;
-      }
-      if (filters.gender && player.gender !== filters.gender) {
-        return false;
-      }
-      if (filters.isNewcomer && !player.isNewToArea) {
-        return false;
-      }
-      return true;
-    });
-  };
+  }, [isDemoMode, filters, applyFilters, fetchNearbyPlayers]);
 
   const handleFilterChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -509,15 +510,32 @@ const NearbyPlayers = () => {
         <h2>Players Near You</h2>
         
         {/* Demo Mode Toggle */}
-        <div className="filter-group" style={{ marginBottom: '24px' }}>
-          <button
-            className={`demo-toggle-button ${isDemoMode ? 'demo-active' : 'live-active'}`}
-            onClick={() => setIsDemoMode(!isDemoMode)}
-          >
-            {isDemoMode ? '🎭 Demo Mode' : '🔴 Live Mode'}
-          </button>
+        <div className="demo-mode-toggle">
+          <div className="toggle-container">
+            <div 
+              className={`toggle-switch ${isDemoMode ? 'demo-active' : 'live-active'}`}
+              onClick={() => {
+                const newMode = !isDemoMode;
+                setIsDemoMode(newMode);
+                setError(''); // Clear any existing errors when switching modes
+                
+                // If switching to live mode and user is not authenticated, show friendly message
+                if (!newMode) {
+                  const token = localStorage.getItem('token');
+                  if (!token) {
+                    setError('Please log in to view live players. Using demo mode for now.');
+                    setIsDemoMode(true); // Stay in demo mode if not authenticated
+                    return;
+                  }
+                }
+              }}
+            />
+            <span className="toggle-label">
+              {isDemoMode ? '🎭 Demo' : '🔴 Live'}
+            </span>
+          </div>
           <div className="demo-indicator">
-            {isDemoMode ? 'Showing sample data' : 'Connected to live data'}
+            {isDemoMode ? 'Showing sample players for testing' : 'Connected to live player database'}
           </div>
         </div>
 
@@ -699,9 +717,11 @@ const NearbyPlayers = () => {
           <div className={`players-list ${viewMode}`}>
             {players.map(player => (
               <div key={player.id} className="player-card">
-                <div className={`distance-badge ${player.distance <= filters.radius ? 'in-range' : 'out-of-range'}`}>
-                  {player.distance} mi
-                </div>
+                {!isDemoMode && (
+                  <div className={`distance-badge ${player.distance <= filters.radius ? 'in-range' : 'out-of-range'}`}>
+                    {player.distance} mi
+                  </div>
+                )}
                 
                 <div className="player-photo">
                   <div style={{

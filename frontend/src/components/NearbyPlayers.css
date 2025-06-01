@@ -26,37 +26,83 @@
   padding: 1rem 0;
 }
 
-.demo-toggle-button {
-  padding: 0.5rem 1rem;
-  border: 2px solid #e8edf5;
-  border-radius: 8px;
-  background: white;
-  color: #4a739c;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s ease;
+/* Modern Toggle Switch for Demo Mode */
+.demo-mode-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
 }
 
-.demo-toggle-button.demo-active {
+.toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 60px;
+  height: 30px;
+  background: #e5e8eb;
+  border-radius: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid #e5e8eb;
+  flex-shrink: 0;
+}
+
+.toggle-switch.demo-active {
   background: #4a739c;
-  color: white;
   border-color: #4a739c;
 }
 
-.demo-toggle-button.live-active {
+.toggle-switch.live-active {
   background: #10b981;
-  color: white;
   border-color: #10b981;
 }
 
-.demo-toggle-button:hover {
-  transform: translateY(-1px);
+.toggle-switch::before {
+  content: '';
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: white;
+  top: 2px;
+  left: 2px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch.live-active::before {
+  transform: translateX(28px);
+}
+
+.toggle-switch:hover {
+  transform: scale(1.05);
+}
+
+.toggle-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0d141c;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 80px;
+  transition: all 0.3s ease;
 }
 
 .demo-indicator {
   font-size: 0.875rem;
   color: #6b7280;
   margin-top: 0.5rem;
+  text-align: center;
+  padding: 4px 8px;
+  background: #f3f4f6;
+  border-radius: 6px;
+  font-style: italic;
 }
 
 /* New Figma-inspired filter sidebar - Made narrower */

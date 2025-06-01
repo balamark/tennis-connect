@@ -61,12 +61,14 @@ const Header = ({ isAuthenticated, userName, onLogout }) => {
           >
             My sessions
           </Link>
-          <Link 
-            className={`text-sm font-medium leading-normal ${isActive('/profile') ? 'text-[#0c7ff2]' : 'text-[#0d141c]'}`} 
-            to="/profile"
-          >
-            Profile
-          </Link>
+          {isAuthenticated && (
+            <Link 
+              className={`text-sm font-medium leading-normal ${isActive('/profile') ? 'text-[#0c7ff2]' : 'text-[#0d141c]'}`} 
+              to="/profile"
+            >
+              {userName || 'Profile'}
+            </Link>
+          )}
         </div>
         <div className="flex items-center gap-3">
           {isAuthenticated ? (
