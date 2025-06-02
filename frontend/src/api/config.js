@@ -31,10 +31,18 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Check if this is a bulletin API call - allow components to handle this gracefully
+      const isBulletinAPI = error.config?.url?.includes('/bulletins');
+      
+      if (!isBulletinAPI) {
+        // Token expired or invalid for other APIs - redirect to login
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('isAuthenticated');
+        localStorage.removeItem('userName');
+        window.location.href = '/login';
+      }
+      // For bulletin API, let the component handle the error and show mock data
     }
     return Promise.reject(error);
   }

@@ -33,11 +33,13 @@ const Login = ({ setIsAuthenticated, updateUserInfo }) => {
       // Store token and user info
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('userName', response.data.user.name || '');
       
       // Update auth state and user info
       setIsAuthenticated(true);
       if (updateUserInfo) {
-        updateUserInfo();
+        updateUserInfo(response.data.user.name || '');
       }
       
       // Redirect to home page

@@ -24,10 +24,12 @@ function App() {
 
   useEffect(() => {
     // Check if user is already logged in (e.g., from localStorage)
+    const token = localStorage.getItem('token');
     const savedAuth = localStorage.getItem('isAuthenticated');
     const savedUserName = localStorage.getItem('userName');
+    const savedUser = localStorage.getItem('user');
     
-    if (savedAuth === 'true') {
+    if ((savedAuth === 'true' || token) && savedUser) {
       setIsAuthenticated(true);
       setUserName(savedUserName || '');
     }
@@ -43,6 +45,8 @@ function App() {
     setUserName('');
     localStorage.removeItem('isAuthenticated');
     localStorage.removeItem('userName');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
   };
 
   return (

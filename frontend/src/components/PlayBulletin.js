@@ -1,21 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import ComingSoon from './ComingSoon';
 import api from '../api/config';
 
 const PlayBulletin = () => {
-  // Show Coming Soon message for now since this feature is not implemented
-  return (
-    <ComingSoon 
-      title="Play Bulletins" 
-      message="Connect with players looking for partners! Post and respond to play opportunities in your area."
-      icon="📢"
-    />
-  );
-
-
   const [bulletins, setBulletins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showingMockData, setShowingMockData] = useState(false);
   const [showExpired] = useState(false);
   const [filters, setFilters] = useState({
     skillLevel: '',
@@ -84,12 +74,21 @@ const PlayBulletin = () => {
       }
 
       const response = await api.get(`/bulletins?${queryParams}`);
-      setBulletins(response.data.bulletins || []);
+      if (response.data.bulletins && response.data.bulletins.length > 0) {
+        setBulletins(response.data.bulletins);
+        setShowingMockData(false);
+        setError(null);
+      } else {
+        setShowingMockData(true);
+        setError(null);
+        setBulletins(getMockBulletins());
+      }
     } catch (err) {
       console.error('Error fetching bulletins:', err);
       setError('Failed to load bulletins. Please try again later.');
       
       // For development: use mock data if API call fails
+      setShowingMockData(true);
       setBulletins(getMockBulletins());
     } finally {
       setLoading(false);
@@ -237,9 +236,16 @@ const PlayBulletin = () => {
   // Helper functions (removed unused formatDateTime)
 
   const isUserBulletin = (bulletin) => {
-    // In a real app, check if the bulletin belongs to the current user
-    // For now, we'll just mock this functionality
-    return Math.random() > 0.7; // 30% chance it's "yours"
+    // Check if the bulletin belongs to the current user
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const currentUserId = currentUser.id;
+    
+    // If no current user or no bulletin userId, return false
+    if (!currentUserId || !bulletin.userId) {
+      return false;
+    }
+    
+    return bulletin.userId === currentUserId;
   };
 
   // Mock data for development with famous tennis players
@@ -356,14 +362,6 @@ const PlayBulletin = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50">
-        <div className="text-red-600 text-lg">{error}</div>
-      </div>
-    );
-  }
-
   return (
     <div className="relative flex size-full min-h-screen flex-col bg-slate-50 group/design-root overflow-x-hidden" style={{fontFamily: '"Spline Sans", "Noto Sans", sans-serif'}}>
       <div className="layout-container flex h-full grow flex-col">
@@ -373,6 +371,32 @@ const PlayBulletin = () => {
               <div className="flex min-w-72 flex-col gap-3">
                 <p className="text-[#0d141c] tracking-light text-[32px] font-bold leading-tight">Play Bulletin Board</p>
                 <p className="text-[#49739c] text-sm font-normal leading-normal">Find a match partner or respond to requests from other players. 🎾</p>
+                
+                {/* Mock data / Error indicator */}
+                {(showingMockData || error) && (
+                  <div className={`rounded-lg p-3 mt-2 ${error && !showingMockData ? 'bg-red-50 border border-red-200' : 'bg-blue-50 border border-blue-200'}`}>
+                    <div className="flex items-center gap-2">
+                      {(error && !showingMockData) ? (
+                        <div className="w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">!</span>
+                        </div>
+                      ) : (
+                        <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">i</span>
+                        </div>
+                      )}
+                      <p className={`${error && !showingMockData ? 'text-red-700' : 'text-blue-700'} text-sm font-medium`}>
+                        {error && !showingMockData ? 'Error' : 'Demo Mode'}
+                      </p>
+                    </div>
+                    <p className={`${error && !showingMockData ? 'text-red-600' : 'text-blue-600'} text-xs mt-1`}>
+                      {error ? 
+                        (showingMockData ? 'Unable to connect to server. Showing sample bulletins to demonstrate the feature.' : error) :
+                        'No bulletins found in your area. Showing sample bulletins to demonstrate the feature.'
+                      }
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
             
@@ -596,8 +620,9 @@ const PlayBulletin = () => {
                   
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-[#0d141c] text-sm font-medium mb-1">Zip Code</label>
+                      <label htmlFor="bulletin-zipCode" className="block text-[#0d141c] text-sm font-medium mb-1">Zip Code</label>
                       <input
+                        id="bulletin-zipCode"
                         type="text"
                         name="location.zipCode"
                         value={newBulletin.location.zipCode}
@@ -608,8 +633,9 @@ const PlayBulletin = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-[#0d141c] text-sm font-medium mb-1">City</label>
+                      <label htmlFor="bulletin-city" className="block text-[#0d141c] text-sm font-medium mb-1">City</label>
                       <input
+                        id="bulletin-city"
                         type="text"
                         name="location.city"
                         value={newBulletin.location.city}
@@ -620,8 +646,9 @@ const PlayBulletin = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-[#0d141c] text-sm font-medium mb-1">State</label>
+                      <label htmlFor="bulletin-state" className="block text-[#0d141c] text-sm font-medium mb-1">State</label>
                       <input
+                        id="bulletin-state"
                         type="text"
                         name="location.state"
                         value={newBulletin.location.state}
@@ -634,8 +661,9 @@ const PlayBulletin = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-[#0d141c] text-sm font-medium mb-1">Preferred Court (optional)</label>
+                    <label htmlFor="bulletin-courtName" className="block text-[#0d141c] text-sm font-medium mb-1">Preferred Court (optional)</label>
                     <input
+                      id="bulletin-courtName"
                       type="text"
                       name="courtName"
                       value={newBulletin.courtName}
@@ -647,8 +675,9 @@ const PlayBulletin = () => {
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[#0d141c] text-sm font-medium mb-1">Start Time</label>
+                      <label htmlFor="bulletin-startTime" className="block text-[#0d141c] text-sm font-medium mb-1">Start Time</label>
                       <input
+                        id="bulletin-startTime"
                         type="datetime-local"
                         name="startTime"
                         value={newBulletin.startTime}
@@ -658,8 +687,9 @@ const PlayBulletin = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-[#0d141c] text-sm font-medium mb-1">End Time</label>
+                      <label htmlFor="bulletin-endTime" className="block text-[#0d141c] text-sm font-medium mb-1">End Time</label>
                       <input
+                        id="bulletin-endTime"
                         type="datetime-local"
                         name="endTime"
                         value={newBulletin.endTime}
@@ -672,8 +702,9 @@ const PlayBulletin = () => {
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[#0d141c] text-sm font-medium mb-1">Skill Level</label>
+                      <label htmlFor="bulletin-skillLevel" className="block text-[#0d141c] text-sm font-medium mb-1">Skill Level</label>
                       <select
+                        id="bulletin-skillLevel"
                         name="skillLevel"
                         value={newBulletin.skillLevel}
                         onChange={handleNewBulletinChange}
@@ -687,8 +718,9 @@ const PlayBulletin = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[#0d141c] text-sm font-medium mb-1">Game Type</label>
+                      <label htmlFor="bulletin-gameType" className="block text-[#0d141c] text-sm font-medium mb-1">Game Type</label>
                       <select
+                        id="bulletin-gameType"
                         name="gameType"
                         value={newBulletin.gameType}
                         onChange={handleNewBulletinChange}
