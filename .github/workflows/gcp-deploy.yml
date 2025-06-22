@@ -75,7 +75,6 @@ jobs:
             DB_SSLMODE=require
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             JWT_EXPIRATION=30
-            PORT=8080
           flags: |
             --allow-unauthenticated
             --memory=512Mi
