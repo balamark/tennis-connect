@@ -225,21 +225,80 @@ make test-coverage
 
 ## Deployment
 
-### Development Deployment
+### Local Development Deployment
 ```bash
 make deploy-dev
 ```
 
-### Production Deployment
-```bash
-# Ensure environment variables are set
-export JWT_SECRET="your-production-secret"
-export POSTGRES_PASSWORD="secure-password"
+### Google Cloud Platform Deployment
 
-make deploy-prod
+#### Prerequisites
+- [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
+- [Terraform](https://www.terraform.io/downloads)
+- [Docker](https://docs.docker.com/get-docker/)
+- A GCP project with billing enabled
+
+#### Automated GCP Deployment
+```bash
+# 1. Edit the deployment script with your project ID
+nano scripts/deploy-gcp.sh
+# Set PROJECT_ID="your-gcp-project-id"
+
+# 2. Run the deployment script
+./scripts/deploy-gcp.sh
 ```
 
-### Docker Deployment
+#### Manual GCP Deployment Steps
+
+1. **Setup GCP Project**
+   ```bash
+   # Set your project ID
+   export PROJECT_ID="your-gcp-project-id"
+   gcloud config set project $PROJECT_ID
+   
+   # Enable required APIs
+   gcloud services enable cloudbuild.googleapis.com
+   gcloud services enable run.googleapis.com
+   gcloud services enable sqladmin.googleapis.com
+   ```
+
+2. **Deploy Infrastructure**
+   ```bash
+   cd terraform
+   
+   # Copy and edit terraform variables
+   cp tf.prod.tfvars terraform.tfvars
+   nano terraform.tfvars  # Edit with your values
+   
+   # Deploy infrastructure
+   terraform init
+   terraform plan
+   terraform apply
+   ```
+
+3. **Build and Deploy Services**
+   ```bash
+   # Configure Docker for GCR
+   gcloud auth configure-docker
+   
+   # Build and push images
+   docker build -t gcr.io/$PROJECT_ID/tennis-connect-backend ./backend
+   docker push gcr.io/$PROJECT_ID/tennis-connect-backend
+   
+   docker build -t gcr.io/$PROJECT_ID/tennis-connect-frontend ./frontend
+   docker push gcr.io/$PROJECT_ID/tennis-connect-frontend
+   
+   # Deploy to Cloud Run
+   gcloud run deploy tennis-connect-backend \
+     --image gcr.io/$PROJECT_ID/tennis-connect-backend \
+     --region us-central1 --allow-unauthenticated
+   
+   gcloud run deploy tennis-connect-frontend \
+     --image gcr.io/$PROJECT_ID/tennis-connect-frontend \
+     --region us-central1 --allow-unauthenticated
+   ```
+
+### Docker Deployment (Local)
 ```bash
 # Build images
 make build
@@ -318,4 +377,147 @@ netstat -an | grep LISTEN
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Logs & Monitoring
+
+### 🔍 Diagnostic Commands
+
+When services aren't working (like localhost:3000 not showing), use these commands to diagnose issues:
+
+#### Check Service Status
+```bash
+make status                    # Check all container statuses
+docker ps -a                   # Show all containers including stopped ones
+```
+
+#### View Logs
+```bash
+# View logs for all services
+make dev-logs                  # Development logs (all services)
+make logs                      # Production logs (all services)
+
+# View logs for specific services
+docker-compose logs frontend   # Frontend only
+docker-compose logs backend    # Backend only 
+docker-compose logs db         # Database only
+
+# Follow logs in real-time
+docker-compose logs -f frontend
+docker-compose logs -f backend
+
+# View recent logs (last 50 lines)
+docker-compose logs --tail=50 frontend
+```
+
+#### Service-Specific Diagnostics
+```bash
+# Frontend debugging
+docker-compose exec frontend npm run build    # Test build process
+docker-compose exec frontend ls -la /app      # Check file permissions
+docker-compose exec frontend node --version   # Check Node version
+
+# Backend debugging  
+docker-compose exec backend curl http://localhost:8080/api/health
+docker-compose exec backend go version
+
+# Database debugging
+docker-compose exec db pg_isready -U postgres
+docker-compose exec db psql -U postgres -d tennis_connect_dev -c "SELECT version();"
+```
+
+#### Fix Common Issues
+```bash
+# Frontend not starting (common fixes)
+make dev-stop                  # Stop all services
+make clean-docker             # Clean Docker resources  
+make dev-start                # Restart services
+
+# Permission issues
+docker-compose exec frontend chmod +x node_modules/.bin/react-scripts
+
+# Node version issues (rebuild with correct version)
+docker-compose down frontend
+docker-compose build --no-cache frontend
+docker-compose up -d frontend
+
+# Port conflicts
+netstat -an | grep LISTEN      # Check what's using ports
+lsof -i :3000                  # Check what's using port 3000
+```
+
+#### Container Inspection
+```bash
+# Get inside a container for debugging
+docker-compose exec frontend sh    # Access frontend container
+docker-compose exec backend sh     # Access backend container
+docker-compose exec db psql -U postgres tennis_connect_dev
+
+# Check container resources
+docker stats tennis-connect-frontend
+docker inspect tennis-connect-frontend
+```
+
+#### Health Checks
+```bash
+# Manual health checks
+curl http://localhost:8080/api/health    # Backend health
+curl http://localhost:3000               # Frontend health (if running)
+
+# Database connectivity
+psql -h localhost -p 5432 -U postgres -d tennis_connect_dev
+```
+
+### 📊 Monitoring During Development
+
+#### Real-time Monitoring
+```bash
+# Watch logs continuously
+make dev-logs &
+
+# Monitor resource usage
+watch docker stats
+
+# Monitor file changes (if using volumes)
+watch ls -la backend/ frontend/src/
+```
+
+#### Performance Monitoring
+```bash
+# Check startup times
+time make dev-start
+
+# Monitor build times
+time make build-frontend
+time make build-backend
+
+# Database performance
+docker-compose exec db psql -U postgres -d tennis_connect_dev -c "SELECT * FROM pg_stat_activity;"
+```
+
+### 🚨 Troubleshooting Checklist
+
+When localhost:3000 isn't working:
+
+1. **Check container status**: `make status`
+2. **View frontend logs**: `docker-compose logs frontend`
+3. **Check for permission issues**: Look for "Permission denied" in logs
+4. **Verify Node version**: Should be 18+ for React
+5. **Check port conflicts**: `lsof -i :3000`
+6. **Try clean restart**: `make clean-docker && make dev-start`
+
+### 📝 Log Levels & Filtering
+
+```bash
+# Filter logs by level
+docker-compose logs frontend | grep ERROR
+docker-compose logs backend | grep -E "(ERROR|WARN)"
+
+# Search logs for specific issues
+docker-compose logs | grep -i "permission denied"
+docker-compose logs | grep -i "failed"
+docker-compose logs | grep -i "error"
+
+# Export logs for analysis
+docker-compose logs > debug-logs-$(date +%Y%m%d-%H%M).txt
+``` 

@@ -644,14 +644,14 @@ const NearbyPlayers = () => {
 
         {/* Newcomer Filter */}
         <div className="filter-group" data-filter="newcomer">
-          <label className={`checkbox-label ${filters.isNewcomer ? 'checked' : ''}`}>
+          <label className="checkbox-item">
             <input
               type="checkbox"
               name="isNewcomer"
               checked={filters.isNewcomer}
               onChange={handleFilterChange}
             />
-            New to Area Only
+            <span className="checkbox-text">New to Area Only</span>
           </label>
         </div>
 

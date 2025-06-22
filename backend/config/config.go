@@ -169,8 +169,10 @@ func loadTestConfig() *Config {
 
 // overrideWithEnvVars overrides configuration with environment variables
 func overrideWithEnvVars(config *Config) *Config {
-	// Server config
-	if port := os.Getenv("SERVER_PORT"); port != "" {
+	// Server config - Cloud Run uses PORT environment variable
+	if port := os.Getenv("PORT"); port != "" {
+		config.Server.Port = port
+	} else if port := os.Getenv("SERVER_PORT"); port != "" {
 		config.Server.Port = port
 	}
 	if host := os.Getenv("SERVER_HOST"); host != "" {

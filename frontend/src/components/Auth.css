@@ -59,18 +59,26 @@
 .checkbox-group {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 15px;
   margin-top: 5px;
 }
 
-.checkbox-label {
+.checkbox-item {
   display: flex;
   align-items: center;
+  cursor: pointer;
   font-weight: normal;
+  margin: 0;
 }
 
-.checkbox-label input {
-  margin-right: 5px;
+.checkbox-item input[type="checkbox"] {
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+.checkbox-text {
+  user-select: none;
+  cursor: pointer;
 }
 
 .auth-button {

@@ -1,0 +1,28 @@
+runtime: go121
+
+env: standard
+
+automatic_scaling:
+  min_instances: 1
+  max_instances: 10
+
+env_variables:
+  APP_ENV: production
+  SERVER_PORT: 8080
+  JWT_SECRET: ${JWT_SECRET}
+  JWT_EXPIRATION: 60
+  DB_HOST: ${DB_HOST}
+  DB_PORT: 5432
+  DB_USER: ${DB_USER}
+  DB_PASSWORD: ${DB_PASSWORD}
+  DB_NAME: ${DB_NAME}
+  DB_SSLMODE: require
+
+handlers:
+- url: /api/.*
+  script: auto
+  secure: always
+
+- url: /.*
+  script: auto
+  secure: always 

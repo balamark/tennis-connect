@@ -15,28 +15,45 @@ const Profile = () => {
 
   // Helper function to format time from various formats
   const formatTime = (timeString) => {
-    if (!timeString) return '00:00';
+    console.log('Formatting time:', timeString, typeof timeString);
+    
+    if (!timeString || timeString === null || timeString === undefined) {
+      console.log('Time is null/undefined, returning 00:00');
+      return '00:00';
+    }
+    
+    // Convert to string if it's not already
+    const timeStr = String(timeString);
     
     // If it's already in HH:MM format, return as is
-    if (/^\d{2}:\d{2}$/.test(timeString)) {
-      return timeString;
+    if (/^\d{1,2}:\d{2}$/.test(timeStr)) {
+      return timeStr.padStart(5, '0'); // Ensure it's HH:MM format
     }
     
     // If it's a full timestamp (e.g., "0000-01-01T09:00:00Z"), extract time
-    if (timeString.includes('T')) {
-      const timePart = timeString.split('T')[1];
+    if (timeStr.includes('T')) {
+      const timePart = timeStr.split('T')[1];
       if (timePart) {
         return timePart.substring(0, 5); // Get HH:MM part
       }
     }
     
     // If it's just time with seconds (e.g., "09:00:00"), remove seconds
-    if (/^\d{2}:\d{2}:\d{2}$/.test(timeString)) {
-      return timeString.substring(0, 5);
+    if (/^\d{1,2}:\d{2}:\d{2}$/.test(timeStr)) {
+      return timeStr.substring(0, 5);
     }
     
-    // Fallback
-    return timeString;
+    // If it's a number (minutes from midnight), convert to HH:MM
+    const timeNum = Number(timeStr);
+    if (!isNaN(timeNum)) {
+      const hours = Math.floor(timeNum / 60);
+      const minutes = timeNum % 60;
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    }
+    
+    // Fallback - if we get here, something's wrong with the data
+    console.warn('Unable to format time:', timeString, 'returning 00:00');
+    return '00:00';
   };
 
   const fetchUserProfile = useCallback(async () => {
@@ -171,24 +188,25 @@ const Profile = () => {
   // Mock data for development
   const getMockProfile = () => ({
     id: '1',
-    email: 'user@example.com',
-    name: 'Tennis Player',
-    skillLevel: '4.0', // Keep as string for form compatibility
-    gameStyles: ['Singles', 'Competitive'],
+    email: 'balamark@hotmail.com',
+    name: 'Mark Wang',
+    skillLevel: '3.5', // Keep as string for form compatibility
+    gameStyles: ['Singles', 'Doubles', 'Social'],
     gender: 'Male',
-    isNewToArea: false,
+    isNewToArea: true,
     isVerified: true,
-    bio: 'Passionate tennis player looking for competitive matches.',
+    bio: 'casual hit',
     preferredTimes: [
       { dayOfWeek: 'Monday', startTime: '18:00', endTime: '20:00' },
+      { dayOfWeek: 'Wednesday', startTime: '19:00', endTime: '21:00' },
       { dayOfWeek: 'Saturday', startTime: '09:00', endTime: '12:00' }
     ],
     location: {
-      latitude: 37.7749,
-      longitude: -122.4194,
-      zipCode: '94105',
-      city: 'San Francisco',
-      state: 'CA'
+      latitude: 36.1699,
+      longitude: -115.1398,
+      zipCode: '89101',
+      city: 'Las Vegas',
+      state: 'NV'
     }
   });
 
@@ -271,16 +289,23 @@ const Profile = () => {
           
           <div className="profile-availability">
             <h2>Preferred Playing Times</h2>
+            {(() => {
+              console.log('Profile preferred times:', profile.preferredTimes);
+              return null;
+            })()}
             {!profile.preferredTimes || profile.preferredTimes.length === 0 ? (
               <p>No preferred times set.</p>
             ) : (
               <div className="time-slots-grid">
-                {profile.preferredTimes.map((timeSlot, index) => (
-                  <div key={index} className="time-slot-card">
-                    <h3>{timeSlot.dayOfWeek}</h3>
-                    <p>{formatTime(timeSlot.startTime)} - {formatTime(timeSlot.endTime)}</p>
-                  </div>
-                ))}
+                {profile.preferredTimes.map((timeSlot, index) => {
+                  console.log(`Time slot ${index}:`, timeSlot);
+                  return (
+                    <div key={index} className="time-slot-card">
+                      <h3>{timeSlot.dayOfWeek || timeSlot.day_of_week || 'Unknown Day'}</h3>
+                      <p>{formatTime(timeSlot.startTime || timeSlot.start_time)} - {formatTime(timeSlot.endTime || timeSlot.end_time)}</p>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -368,14 +393,14 @@ const Profile = () => {
               </div>
               
               <div className="form-group">
-                <label className="checkbox-label">
+                <label className="checkbox-item">
                   <input
                     type="checkbox"
                     name="isNewToArea"
                     checked={formData.isNewToArea}
                     onChange={handleChange}
                   />
-                  I'm new to the area and looking to meet players
+                  <span className="checkbox-text">I'm new to the area and looking to meet players</span>
                 </label>
               </div>
             </div>
@@ -400,19 +425,23 @@ const Profile = () => {
               </div>
               
               <div className="form-group">
-                <label>Game Styles:</label>
-                <div className="checkbox-group">
-                  {gameStyles.map(style => (
-                    <label key={style} className="checkbox-label">
-                      <input
-                        type="checkbox"
-                        checked={formData.gameStyles && formData.gameStyles.includes(style)}
-                        onChange={() => handleGameStyleChange(style)}
-                      />
-                      {style}
-                    </label>
-                  ))}
-                </div>
+                <fieldset>
+                  <legend>Game Styles:</legend>
+                  <div className="checkbox-group">
+                    {gameStyles.map(style => (
+                      <label key={style} className="checkbox-item">
+                        <input
+                          type="checkbox"
+                          name="gameStyles"
+                          value={style}
+                          checked={formData.gameStyles && formData.gameStyles.includes(style)}
+                          onChange={() => handleGameStyleChange(style)}
+                        />
+                        <span className="checkbox-text">{style}</span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
               </div>
               
               <div className="form-group">

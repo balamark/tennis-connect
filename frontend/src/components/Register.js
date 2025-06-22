@@ -25,7 +25,9 @@ const Register = () => {
     const { name, value, type, checked } = e.target;
     
     if (type === 'checkbox') {
-      setFormData(prev => ({ ...prev, [name]: checked }));
+      if (name === 'isNewToArea') {
+        setFormData(prev => ({ ...prev, [name]: checked }));
+      }
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -35,15 +37,23 @@ const Register = () => {
     }
   };
   
-  const handleGameStyleChange = (style) => {
+  const handleGameStyleChange = (event) => {
+    const { value, checked } = event.target;
+    
     setFormData(prev => {
       const styles = [...prev.gameStyles];
-      if (styles.includes(style)) {
-        return { ...prev, gameStyles: styles.filter(s => s !== style) };
-      } else {
-        return { ...prev, gameStyles: [...styles, style] };
+      if (checked && !styles.includes(value)) {
+        return { ...prev, gameStyles: [...styles, value] };
+      } else if (!checked && styles.includes(value)) {
+        return { ...prev, gameStyles: styles.filter(s => s !== value) };
       }
+      return prev;
     });
+    
+    // Clear error when user interacts
+    if (error) {
+      setError('');
+    }
   };
 
   const validateForm = () => {
@@ -248,33 +258,42 @@ const Register = () => {
           </div>
           
           <div className="form-group">
-            <label>Game Styles:</label>
-            <div className="checkbox-group">
-              {gameStyleOptions.map(style => (
-                <label key={style} className="checkbox-label" style={{ cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={formData.gameStyles.includes(style)}
-                    onChange={() => handleGameStyleChange(style)}
-                    style={{ cursor: 'pointer' }}
-                  />
-                  <span style={{ cursor: 'pointer' }}>{style}</span>
-                </label>
-              ))}
-            </div>
+            <fieldset>
+              <legend>Game Styles:</legend>
+                              <div className="checkbox-group">
+                  {gameStyleOptions.map(style => (
+                    <label key={style} className="checkbox-item">
+                      <input
+                        type="checkbox"
+                        name="gameStyles"
+                        value={style}
+                        checked={formData.gameStyles.includes(style)}
+                        onChange={handleGameStyleChange}
+                      />
+                      <span className="checkbox-text">{style}</span>
+                    </label>
+                  ))}
+              </div>
+              <small id="game-styles-help" className="form-text text-muted">
+                Select all game styles you're interested in playing
+              </small>
+            </fieldset>
           </div>
           
           <div className="form-group">
-            <label className="checkbox-label" style={{ cursor: 'pointer' }}>
+            <label className="checkbox-item">
               <input
                 type="checkbox"
                 name="isNewToArea"
                 checked={formData.isNewToArea}
                 onChange={handleChange}
-                style={{ cursor: 'pointer' }}
+                aria-describedby="new-to-area-help"
               />
-              <span style={{ cursor: 'pointer' }}>I'm new to the area and looking to meet players</span>
+              <span className="checkbox-text">I'm new to the area and looking to meet players</span>
             </label>
+            <small id="new-to-area-help" className="form-text text-muted">
+              This helps us connect you with welcoming players and communities
+            </small>
           </div>
           
           <button 

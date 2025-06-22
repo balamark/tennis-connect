@@ -306,19 +306,23 @@ const TennisCourts = () => {
         </div>
         
         <div className="filter-group">
-          <label>Amenities:</label>
-          <div className="checkbox-group">
-            {amenityOptions.map(amenity => (
-              <label key={amenity} className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={filters.amenities.includes(amenity)}
-                  onChange={() => handleAmenityChange(amenity)}
-                />
-                {amenity}
-              </label>
-            ))}
-          </div>
+          <fieldset>
+            <legend>Amenities:</legend>
+            <div className="checkbox-group">
+              {amenityOptions.map(amenity => (
+                <label key={amenity} className="checkbox-item">
+                  <input
+                    type="checkbox"
+                    name="amenities"
+                    value={amenity}
+                    checked={filters.amenities.includes(amenity)}
+                    onChange={() => handleAmenityChange(amenity)}
+                  />
+                  <span className="checkbox-text">{amenity}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
         </div>
         
         <div className="filter-group">

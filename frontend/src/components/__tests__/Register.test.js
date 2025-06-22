@@ -506,4 +506,212 @@ describe('Register Component', () => {
       });
     });
   });
+
+  describe('Game Style Checkboxes', () => {
+    test('renders all game style options', () => {
+      renderRegister();
+      
+      expect(screen.getByText('Singles')).toBeInTheDocument();
+      expect(screen.getByText('Doubles')).toBeInTheDocument();
+      expect(screen.getByText('Social')).toBeInTheDocument();
+      expect(screen.getByText('Competitive')).toBeInTheDocument();
+    });
+
+         test('allows multiple game styles to be selected', () => {
+       renderRegister();
+       
+       const singlesCheckbox = screen.getByRole('checkbox', { name: /singles/i });
+       const doublesCheckbox = screen.getByRole('checkbox', { name: /doubles/i });
+       
+       expect(singlesCheckbox).not.toBeChecked();
+       expect(doublesCheckbox).not.toBeChecked();
+       
+       fireEvent.click(singlesCheckbox);
+       fireEvent.click(doublesCheckbox);
+       
+       expect(singlesCheckbox).toBeChecked();
+       expect(doublesCheckbox).toBeChecked();
+     });
+
+         test('allows game styles to be unchecked', () => {
+       renderRegister();
+       
+       const singlesCheckbox = screen.getByRole('checkbox', { name: /singles/i });
+       
+       // Check then uncheck
+       fireEvent.click(singlesCheckbox);
+       expect(singlesCheckbox).toBeChecked();
+       
+       fireEvent.click(singlesCheckbox);
+       expect(singlesCheckbox).not.toBeChecked();
+     });
+
+         test('handles all four game style selections correctly', () => {
+       renderRegister();
+       
+       const gameStyles = ['Singles', 'Doubles', 'Social', 'Competitive'];
+       const checkboxes = gameStyles.map(style => 
+         screen.getByRole('checkbox', { name: new RegExp(style, 'i') })
+       );
+       
+       // Select all
+       checkboxes.forEach(checkbox => fireEvent.click(checkbox));
+       
+       // Verify all are checked
+       checkboxes.forEach(checkbox => expect(checkbox).toBeChecked());
+       
+       // Unselect one
+       fireEvent.click(checkboxes[0]);
+       expect(checkboxes[0]).not.toBeChecked();
+       
+       // Others should still be checked
+       checkboxes.slice(1).forEach(checkbox => expect(checkbox).toBeChecked());
+     });
+  });
+
+  describe('Gender Selection', () => {
+         test('renders gender dropdown with all options', () => {
+       renderRegister();
+       
+       const genderSelect = screen.getByLabelText(/gender/i);
+       expect(genderSelect).toBeInTheDocument();
+       
+       // Check that all gender options exist
+       const femaleOption = Array.from(genderSelect.options).find(option => option.value === 'Female');
+       const maleOption = Array.from(genderSelect.options).find(option => option.value === 'Male');
+       const otherOption = Array.from(genderSelect.options).find(option => option.value === 'Other');
+       const preferNotToSayOption = Array.from(genderSelect.options).find(option => option.value === '');
+       
+       expect(femaleOption).toBeInTheDocument();
+       expect(maleOption).toBeInTheDocument();
+       expect(otherOption).toBeInTheDocument();
+       expect(preferNotToSayOption).toBeInTheDocument();
+     });
+
+    test('allows gender selection', () => {
+      renderRegister();
+      
+      const genderSelect = screen.getByLabelText(/gender/i);
+      
+      fireEvent.change(genderSelect, { target: { value: 'Female' } });
+      expect(genderSelect.value).toBe('Female');
+      
+      fireEvent.change(genderSelect, { target: { value: 'Male' } });
+      expect(genderSelect.value).toBe('Male');
+    });
+
+    test('defaults to empty string (prefer not to say)', () => {
+      renderRegister();
+      
+      const genderSelect = screen.getByLabelText(/gender/i);
+      expect(genderSelect.value).toBe('');
+    });
+  });
+
+  describe('New to Area Checkbox', () => {
+    test('renders new to area checkbox', () => {
+      renderRegister();
+      
+      const newToAreaCheckbox = screen.getByRole('checkbox', { 
+        name: /i'm new to the area and looking to meet players/i 
+      });
+      expect(newToAreaCheckbox).toBeInTheDocument();
+      expect(newToAreaCheckbox).not.toBeChecked();
+    });
+
+    test('allows new to area checkbox to be checked and unchecked', () => {
+      renderRegister();
+      
+      const newToAreaCheckbox = screen.getByRole('checkbox', { 
+        name: /i'm new to the area and looking to meet players/i 
+      });
+      
+      fireEvent.click(newToAreaCheckbox);
+      expect(newToAreaCheckbox).toBeChecked();
+      
+      fireEvent.click(newToAreaCheckbox);
+      expect(newToAreaCheckbox).not.toBeChecked();
+    });
+  });
+
+  describe('Form Submission', () => {
+    test('submits form with selected game styles and gender', async () => {
+      api.post.mockResolvedValue({ data: { id: 1 } });
+      renderRegister();
+      
+      fillValidForm();
+      
+             // Select game styles
+       fireEvent.click(screen.getByRole('checkbox', { name: /singles/i }));
+       fireEvent.click(screen.getByRole('checkbox', { name: /doubles/i }));
+      
+      // Select gender
+      fireEvent.change(screen.getByLabelText(/gender/i), { 
+        target: { value: 'Female' } 
+      });
+      
+      // Check new to area
+      fireEvent.click(screen.getByRole('checkbox', { 
+        name: /i'm new to the area and looking to meet players/i 
+      }));
+      
+      // Submit form
+      fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+      
+      await waitFor(() => {
+        expect(api.post).toHaveBeenCalledWith('/users/register', expect.objectContaining({
+          name: 'John Doe',
+          email: 'john@example.com',
+          gameStyles: ['Singles', 'Doubles'],
+          gender: 'Female',
+          isNewToArea: true,
+          skillLevel: 4.0
+        }));
+      });
+    });
+
+    test('submits form with empty game styles array when none selected', async () => {
+      api.post.mockResolvedValue({ data: { id: 1 } });
+      renderRegister();
+      
+      fillValidForm();
+      
+      // Don't select any game styles
+      
+      fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+      
+      await waitFor(() => {
+        expect(api.post).toHaveBeenCalledWith('/users/register', expect.objectContaining({
+          gameStyles: [],
+          gender: '',
+          isNewToArea: false
+        }));
+      });
+    });
+  });
+
+  describe('Accessibility', () => {
+         test('checkboxes have proper labels and are keyboard accessible', () => {
+       renderRegister();
+       
+       const singlesCheckbox = screen.getByRole('checkbox', { name: /singles/i });
+       
+       expect(singlesCheckbox).toHaveAttribute('name', 'gameStyles');
+       expect(singlesCheckbox).toHaveAttribute('value', 'Singles');
+       
+       // Test keyboard interaction
+       singlesCheckbox.focus();
+       fireEvent.keyPress(singlesCheckbox, { key: ' ', charCode: 32 });
+       
+       // Note: Some browsers may not trigger change on keypress, so we test focus
+       expect(document.activeElement).toBe(singlesCheckbox);
+     });
+
+    test('gender select has proper label', () => {
+      renderRegister();
+      
+      const genderSelect = screen.getByLabelText(/gender/i);
+      expect(genderSelect).toHaveAccessibleName();
+    });
+  });
 }); 

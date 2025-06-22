@@ -146,6 +146,15 @@ __debug_bin
 .env.development.local
 .env.test.local
 .env.production.local
+.env.prod
+.env.staging
+
+# Terraform
+terraform/.terraform/
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/terraform.tfvars
+terraform/.terraform.lock.hcl
 .env.*.local
 
 # Configuration files with sensitive data

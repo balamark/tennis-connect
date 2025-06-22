@@ -308,14 +308,14 @@ const Events = () => {
           </div>
           
           <div className="filter-group">
-            <label className="checkbox-label">
+            <label className="checkbox-item">
               <input
                 type="checkbox"
                 name="newcomerFriendly"
                 checked={filters.newcomerFriendly}
                 onChange={handleFilterChange}
               />
-              Newcomer Friendly
+              <span className="checkbox-text">Newcomer Friendly</span>
             </label>
           </div>
           

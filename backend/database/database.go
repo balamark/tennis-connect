@@ -77,3 +77,11 @@ func (db *DB) Close() error {
 	}
 	return db.DB.Close()
 }
+
+// Ping checks if the database connection is alive
+func (db *DB) Ping() error {
+	if db == nil || db.DB == nil {
+		return fmt.Errorf("database not initialized")
+	}
+	return db.DB.Ping()
+}

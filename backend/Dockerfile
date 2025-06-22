@@ -1,5 +1,8 @@
 # Build stage
-FROM golang:1.24-alpine AS builder
+FROM golang:1.23-alpine AS builder
+
+# Install git for go modules that might need it
+RUN apk add --no-cache git
 
 # Set working directory
 WORKDIR /app
@@ -13,8 +16,11 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o tennis-connect-api .
+# Build the application with optimizations
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags='-w -s -extldflags "-static"' \
+    -a -installsuffix cgo \
+    -o tennis-connect-api .
 
 # Final stage
 FROM alpine:latest

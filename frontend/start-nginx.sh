@@ -1,5 +1,12 @@
+#!/bin/sh
+
+# Get the port from Cloud Run's PORT environment variable, default to 8080
+PORT=${PORT:-8080}
+
+# Create nginx config with the correct port
+cat > /etc/nginx/conf.d/default.conf << EOF
 server {
-    listen 8080;
+    listen ${PORT};
     server_name localhost;
     root /usr/share/nginx/html;
     index index.html;
@@ -13,17 +20,7 @@ server {
 
     # Frontend routes
     location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    # API proxy
-    location /api/ {
-        proxy_pass http://backend:8080/api/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
+        try_files \$uri \$uri/ /index.html;
     }
 
     # Error handling
@@ -32,4 +29,8 @@ server {
     location = /50x.html {
         root /usr/share/nginx/html;
     }
-} 
+}
+EOF
+
+# Start nginx
+nginx -g "daemon off;" 

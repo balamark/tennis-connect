@@ -231,42 +231,46 @@ const CourtFinder = () => {
           </div>
           
           <div className="filter-group">
-            <label>Amenities:</label>
-            <div className="checkbox-group">
-              {amenityOptions.map(amenity => (
-                <label key={amenity} className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={filters.amenities.includes(amenity)}
-                    onChange={() => handleAmenityChange(amenity)}
-                  />
-                  {amenity}
-                </label>
-              ))}
-            </div>
+            <fieldset>
+              <legend>Amenities:</legend>
+              <div className="checkbox-group">
+                {amenityOptions.map(amenity => (
+                  <label key={amenity} className="checkbox-item">
+                    <input
+                      type="checkbox"
+                      name="amenities"
+                      value={amenity}
+                      checked={filters.amenities.includes(amenity)}
+                      onChange={() => handleAmenityChange(amenity)}
+                    />
+                    <span className="checkbox-text">{amenity}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
           </div>
           
           <div className="filter-group">
-            <label className="checkbox-label">
+            <label className="checkbox-item">
               <input
                 type="checkbox"
                 name="isPublicOnly"
                 checked={filters.isPublicOnly}
                 onChange={handleFilterChange}
               />
-              Public courts only
+              <span className="checkbox-text">Public courts only</span>
             </label>
           </div>
           
           <div className="filter-group">
-            <label className="checkbox-label">
+            <label className="checkbox-item">
               <input
                 type="checkbox"
                 name="hasActivePlayers"
                 checked={filters.hasActivePlayers}
                 onChange={handleFilterChange}
               />
-              Courts with active players
+              <span className="checkbox-text">Courts with active players</span>
             </label>
           </div>
           

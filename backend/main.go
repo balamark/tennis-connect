@@ -29,37 +29,81 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	// Connect to database
-	db, err := database.Connect(cfg)
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+	// Initialize database connection manager
+	dbManager := database.NewConnectionManager(cfg)
+	
+	// Start background reconnection handler
+	dbManager.StartBackgroundReconnection()
+	
+	// Attempt initial connection with retry logic
+	var db *database.DB
+	var err error
+	if cfg.IsProduction() {
+		// In production, try connecting once and if it fails, let background reconnection handle it
+		log.Println("Attempting initial database connection...")
+		db, err = database.Connect(cfg)
+		if err != nil {
+			log.Printf("Initial database connection failed: %v", err)
+			log.Printf("Service will start but database-dependent endpoints will not work")
+			log.Printf("Background reconnection is active and will continue trying to connect")
+			db = nil
+		} else {
+			log.Println("Successfully connected to database on startup")
+			// Set the manager's internal state
+			dbManager.SetDatabase(db)
+		}
+	} else {
+		// In development, use the full retry logic
+		db, err = dbManager.ConnectWithRetry()
+		if err != nil {
+			log.Fatalf("Failed to connect to database: %v", err)
+		}
 	}
-	defer db.Close()
-
-	// Run migrations if not in production (in production, migrations should be run separately)
-	if !cfg.IsProduction() {
-		migrationsPath := filepath.Join(".", "migrations")
-		if err := db.RunMigrations(migrationsPath); err != nil {
-			log.Fatalf("Failed to run migrations: %v", err)
+	
+	if db != nil {
+		defer db.Close()
+		
+		// Run migrations if not in production (in production, migrations should be run separately)
+		if !cfg.IsProduction() {
+			migrationsPath := filepath.Join(".", "migrations")
+			if err := db.RunMigrations(migrationsPath); err != nil {
+				log.Fatalf("Failed to run migrations: %v", err)
+			}
 		}
 	}
 
-	// Initialize repositories
-	userRepo := repository.NewUserRepository(db)
-	courtRepo := repository.NewCourtRepository(db)
-	bulletinRepo := repository.NewBulletinRepository(db)
-	eventRepo := repository.NewEventRepository(db)
-	communityRepo := repository.NewCommunityRepository(db)
+	// Initialize repositories (will be nil if database connection failed)
+	var userRepo *repository.UserRepository
+	var courtRepo *repository.CourtRepository
+	var bulletinRepo *repository.BulletinRepository
+	var eventRepo *repository.EventRepository
+	var communityRepo *repository.CommunityRepository
+	
+	if db != nil {
+		userRepo = repository.NewUserRepository(db)
+		courtRepo = repository.NewCourtRepository(db)
+		bulletinRepo = repository.NewBulletinRepository(db)
+		eventRepo = repository.NewEventRepository(db)
+		communityRepo = repository.NewCommunityRepository(db)
+	}
 
 	// Initialize JWT manager
 	jwtManager := utils.NewJWTManager(cfg.JWT.Secret, cfg.JWT.Expiration)
 
-	// Initialize handlers
-	userHandler := handlers.NewUserHandler(userRepo)
-	courtHandler := handlers.NewCourtHandler(courtRepo)
-	bulletinHandler := handlers.NewBulletinHandler(bulletinRepo)
-	eventHandler := handlers.NewEventHandler(eventRepo)
-	communityHandler := handlers.NewCommunityHandler(communityRepo)
+	// Initialize handlers (will be nil if database connection failed)
+	var userHandler *handlers.UserHandler
+	var courtHandler *handlers.CourtHandler
+	var bulletinHandler *handlers.BulletinHandler
+	var eventHandler *handlers.EventHandler
+	var communityHandler *handlers.CommunityHandler
+	
+	if db != nil {
+		userHandler = handlers.NewUserHandler(userRepo)
+		courtHandler = handlers.NewCourtHandler(courtRepo)
+		bulletinHandler = handlers.NewBulletinHandler(bulletinRepo)
+		eventHandler = handlers.NewEventHandler(eventRepo)
+		communityHandler = handlers.NewCommunityHandler(communityRepo)
+	}
 
 	// Initialize Gin router
 	r := gin.Default()
@@ -71,15 +115,24 @@ func main() {
 	})
 
 	// Configure CORS
+	allowedOrigins := []string{"http://localhost:3000", "http://localhost:80", "http://localhost"}
+	if cfg.IsProduction() {
+		// Add production frontend URLs here
+		allowedOrigins = append(allowedOrigins, 
+			"https://tennis-connect-frontend-*.run.app",
+			"https://*.appspot.com",
+		)
+	}
+	
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:80", "http://localhost"},
+		AllowOrigins:     allowedOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
 		AllowCredentials: true,
 	}))
 
 	// Routes
-	setupRoutes(r, userHandler, courtHandler, bulletinHandler, eventHandler, communityHandler, jwtManager)
+	setupRoutes(r, userHandler, courtHandler, bulletinHandler, eventHandler, communityHandler, jwtManager, dbManager)
 
 	// Start server
 	serverAddr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
@@ -116,19 +169,46 @@ func loadEnvForEnvironment() {
 
 func setupRoutes(r *gin.Engine, userHandler *handlers.UserHandler,
 	courtHandler *handlers.CourtHandler, bulletinHandler *handlers.BulletinHandler,
-	eventHandler *handlers.EventHandler, communityHandler *handlers.CommunityHandler, jwtManager *utils.JWTManager) {
+	eventHandler *handlers.EventHandler, communityHandler *handlers.CommunityHandler, jwtManager *utils.JWTManager, dbManager *database.ConnectionManager) {
+	
+	// Middleware to check database connection
+	requireDatabase := func(c *gin.Context) {
+		if !dbManager.IsHealthy() || userHandler == nil || courtHandler == nil || bulletinHandler == nil || eventHandler == nil || communityHandler == nil {
+			c.JSON(503, gin.H{
+				"error": "Database connection unavailable",
+				"message": "This endpoint requires database connectivity which is currently unavailable",
+				"database_status": dbManager.GetConnectionStatus(),
+			})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
 	// API routes
 	api := r.Group("/api")
 	{
 		// Health check
 		api.GET("/health", func(c *gin.Context) {
-			c.JSON(200, gin.H{
+			response := gin.H{
 				"status": "ok",
-			})
+				"message": "Tennis Connect API is running",
+				"database": dbManager.GetConnectionStatus(),
+			}
+			
+			// Set HTTP status based on database health
+			statusCode := 200
+			if !dbManager.IsHealthy() {
+				statusCode = 503 // Service Unavailable for degraded state
+				response["status"] = "degraded"
+				response["message"] = "API is running but database is unavailable"
+			}
+			
+			c.JSON(statusCode, response)
 		})
 
 		// User routes
 		userRoutes := api.Group("/users")
+		userRoutes.Use(requireDatabase)
 		{
 			userRoutes.POST("/register", userHandler.RegisterUser)
 			userRoutes.POST("/login", userHandler.LoginUser)
@@ -140,6 +220,7 @@ func setupRoutes(r *gin.Engine, userHandler *handlers.UserHandler,
 
 		// Courts routes
 		courtRoutes := api.Group("/courts")
+		courtRoutes.Use(requireDatabase)
 		{
 			courtRoutes.GET("/", authMiddleware(jwtManager), courtHandler.GetCourts)
 			courtRoutes.GET("/:id", authMiddleware(jwtManager), courtHandler.GetCourtDetails)
@@ -149,6 +230,7 @@ func setupRoutes(r *gin.Engine, userHandler *handlers.UserHandler,
 
 		// Events routes
 		eventRoutes := api.Group("/events")
+		eventRoutes.Use(requireDatabase)
 		{
 			eventRoutes.GET("/", authMiddleware(jwtManager), eventHandler.GetEvents)
 			eventRoutes.GET("/:id", authMiddleware(jwtManager), eventHandler.GetEventDetails)
@@ -158,6 +240,7 @@ func setupRoutes(r *gin.Engine, userHandler *handlers.UserHandler,
 
 		// Looking-to-play bulletin routes
 		bulletinRoutes := api.Group("/bulletins")
+		bulletinRoutes.Use(requireDatabase)
 		{
 			bulletinRoutes.GET("/", authMiddleware(jwtManager), bulletinHandler.GetBulletins)
 			bulletinRoutes.POST("/", authMiddleware(jwtManager), bulletinHandler.CreateBulletin)
@@ -168,6 +251,7 @@ func setupRoutes(r *gin.Engine, userHandler *handlers.UserHandler,
 
 		// Community routes
 		communityRoutes := api.Group("/communities")
+		communityRoutes.Use(requireDatabase)
 		{
 			communityRoutes.GET("/", authMiddleware(jwtManager), communityHandler.GetCommunities)
 			communityRoutes.GET("/:id", authMiddleware(jwtManager), communityHandler.GetCommunityDetails)
