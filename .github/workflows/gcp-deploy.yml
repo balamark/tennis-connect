@@ -53,7 +53,7 @@ jobs:
           cd frontend
           docker build \
             --target production \
-            --build-arg REACT_APP_API_URL=https://$SERVICE_BACKEND-${{ secrets.GCP_PROJECT_ID }}.a.run.app/api \
+            --build-arg REACT_APP_API_URL=https://$SERVICE_BACKEND-552905514167.us-central1.run.app/api \
             --build-arg REACT_APP_ENV=production \
             -t $GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/tennis-connect/$SERVICE_FRONTEND:$GITHUB_SHA .
           docker push $GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/tennis-connect/$SERVICE_FRONTEND:$GITHUB_SHA
