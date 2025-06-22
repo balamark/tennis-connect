@@ -201,14 +201,19 @@ docker-compose.local.yml
 # Log files
 *.log
 logs/
-/backend/logs/
-/frontend/logs/
-
-# Runtime logs
+log/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-lerna-debug.log*
+
+# Debug scripts
+debug_logs.sh
+
+# Runtime logs
+pids/
+*.pid
+*.seed
+*.pid.lock
 
 # =============================================================================
 # IDE & EDITOR FILES
