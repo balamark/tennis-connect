@@ -44,194 +44,54 @@ func (c *DatabaseConfig) GetConnectionString() string {
 	)
 }
 
-// LoadConfig loads configuration based on the environment
+// LoadConfig loads configuration with sensible defaults, overridden by environment variables
 func LoadConfig() *Config {
-	// Load environment defaults
-	var config *Config
-
-	// Get environment
-	env := os.Getenv("APP_ENV")
-	if env == "" {
-		env = "development"
+	// Default configuration that works for both local and deployment
+	config := &Config{
+		Environment: getEnvOrDefault("APP_ENV", "development"),
+		Server: ServerConfig{
+			Port: getEnvOrDefault("PORT", getEnvOrDefault("SERVER_PORT", "8080")),
+			Host: getEnvOrDefault("SERVER_HOST", ""),
+		},
+		Database: DatabaseConfig{
+			Host:     getEnvOrDefault("DB_HOST", "db"),
+			Port:     getEnvOrDefault("DB_PORT", "5432"),
+			User:     getEnvOrDefault("DB_USER", "postgres"),
+			Password: getEnvOrDefault("DB_PASSWORD", "postgres"),
+			DBName:   getEnvOrDefault("DB_NAME", "tennis_connect"),
+			SSLMode:  getEnvOrDefault("DB_SSLMODE", "disable"),
+		},
+		JWT: JWTConfig{
+			Secret:     getEnvOrDefault("JWT_SECRET", "tennis-connect-secret-key-change-in-production"),
+			Expiration: getEnvAsIntOrDefault("JWT_EXPIRATION", 60), // minutes
+		},
 	}
-
-	// Initialize config with environment defaults
-	switch env {
-	case "production":
-		config = loadProductionConfig()
-	case "test":
-		config = loadTestConfig()
-	default:
-		config = loadDevelopmentConfig()
-	}
-
-	// Override with environment variables
-	config = overrideWithEnvVars(config)
 
 	return config
 }
 
-// loadDevelopmentConfig loads development environment configuration
-func loadDevelopmentConfig() *Config {
-	// Server config
-	serverConfig := ServerConfig{
-		Port: "8080",
-		Host: "",
+// Helper functions
+func getEnvOrDefault(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
 	}
-
-	// Database config
-	dbConfig := DatabaseConfig{
-		Host:     "localhost",
-		Port:     "5432",
-		User:     "postgres",
-		Password: "postgres",
-		DBName:   "tennis_connect_dev",
-		SSLMode:  "disable",
-	}
-
-	// JWT config
-	jwtConfig := JWTConfig{
-		Secret:     "your-development-secret-key",
-		Expiration: 60, // minutes
-	}
-
-	return &Config{
-		Environment: "development",
-		Server:      serverConfig,
-		Database:    dbConfig,
-		JWT:         jwtConfig,
-	}
+	return defaultValue
 }
 
-// loadProductionConfig loads production environment configuration
-func loadProductionConfig() *Config {
-	// Server config
-	serverConfig := ServerConfig{
-		Port: "8080",
-		Host: "",
-	}
-
-	// Database config
-	dbConfig := DatabaseConfig{
-		Host:     "db",
-		Port:     "5432",
-		User:     "app_user",
-		Password: "use_env_variable",
-		DBName:   "tennis_connect_prod",
-		SSLMode:  "require",
-	}
-
-	// JWT config
-	jwtConfig := JWTConfig{
-		Secret:     "use_env_variable",
-		Expiration: 30, // minutes
-	}
-
-	return &Config{
-		Environment: "production",
-		Server:      serverConfig,
-		Database:    dbConfig,
-		JWT:         jwtConfig,
-	}
-}
-
-// loadTestConfig loads test environment configuration
-func loadTestConfig() *Config {
-	// Server config
-	serverConfig := ServerConfig{
-		Port: "8081", // Use a different port for tests
-		Host: "",
-	}
-
-	// Database config
-	dbConfig := DatabaseConfig{
-		Host:     "localhost",
-		Port:     "5432",
-		User:     "postgres",
-		Password: "postgres",
-		DBName:   "tennis_connect_test",
-		SSLMode:  "disable",
-	}
-
-	// JWT config
-	jwtConfig := JWTConfig{
-		Secret:     "test-secret-key",
-		Expiration: 60, // minutes
-	}
-
-	return &Config{
-		Environment: "test",
-		Server:      serverConfig,
-		Database:    dbConfig,
-		JWT:         jwtConfig,
-	}
-}
-
-// overrideWithEnvVars overrides configuration with environment variables
-func overrideWithEnvVars(config *Config) *Config {
-	// Server config - Cloud Run uses PORT environment variable
-	if port := os.Getenv("PORT"); port != "" {
-		config.Server.Port = port
-	} else if port := os.Getenv("SERVER_PORT"); port != "" {
-		config.Server.Port = port
-	}
-	if host := os.Getenv("SERVER_HOST"); host != "" {
-		config.Server.Host = host
-	}
-
-	// Database config
-	if host := os.Getenv("DB_HOST"); host != "" {
-		config.Database.Host = host
-	}
-	if port := os.Getenv("DB_PORT"); port != "" {
-		config.Database.Port = port
-	}
-	if user := os.Getenv("DB_USER"); user != "" {
-		config.Database.User = user
-	}
-	if password := os.Getenv("DB_PASSWORD"); password != "" {
-		config.Database.Password = password
-	}
-	if dbName := os.Getenv("DB_NAME"); dbName != "" {
-		config.Database.DBName = dbName
-	}
-	if sslMode := os.Getenv("DB_SSLMODE"); sslMode != "" {
-		config.Database.SSLMode = sslMode
-	}
-
-	// JWT config
-	if secret := os.Getenv("JWT_SECRET"); secret != "" {
-		config.JWT.Secret = secret
-	}
-	if expirationStr := os.Getenv("JWT_EXPIRATION"); expirationStr != "" {
-		if expiration, err := strconv.Atoi(expirationStr); err == nil {
-			config.JWT.Expiration = expiration
+func getEnvAsIntOrDefault(key string, defaultValue int) int {
+	if value := os.Getenv(key); value != "" {
+		if intValue, err := strconv.Atoi(value); err == nil {
+			return intValue
 		}
 	}
-
-	return config
+	return defaultValue
 }
 
-// IsDevelopment returns true if the environment is development
+// Utility methods for environment checking
 func (c *Config) IsDevelopment() bool {
 	return c.Environment == "development"
 }
 
-// IsProduction returns true if the environment is production
 func (c *Config) IsProduction() bool {
 	return c.Environment == "production"
-}
-
-// IsTest returns true if the environment is test
-func (c *Config) IsTest() bool {
-	return c.Environment == "test"
-}
-
-// Helper to get environment variables with defaults
-func getEnvOrDefault(key, defaultValue string) string {
-	value := os.Getenv(key)
-	if value == "" {
-		return defaultValue
-	}
-	return value
 }
