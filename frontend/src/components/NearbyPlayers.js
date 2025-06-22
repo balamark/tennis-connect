@@ -130,6 +130,10 @@ const NearbyPlayers = () => {
 
   useEffect(() => {
     if (isDemoMode) {
+      // Clear any previous error states when entering demo mode
+      setError('');
+      setLoading(false);
+      
       const allPlayers = getMockPlayers();
       const filteredPlayers = applyFilters(allPlayers);
       
@@ -157,7 +161,9 @@ const NearbyPlayers = () => {
         });
       }
     } else {
-      // In live mode, fetch real users from API
+      // In live mode, clear demo data and fetch real users from API
+      setPlayers([]);
+      setSearchMetadata(null);
       fetchNearbyPlayers();
     }
   }, [isDemoMode, filters, applyFilters, fetchNearbyPlayers]);

@@ -6,111 +6,147 @@
 export const getMockPlayers = () => [
   {
     id: '1',
-    name: 'Chris Lee',
-    email: 'chris@example.com',
-    skillLevel: 4.0,
+    name: 'Roger Federer',
+    email: 'roger@tennislegends.com',
+    skillLevel: 6.5,
     location: { city: 'San Francisco', state: 'CA' },
-    gameStyles: ['Singles', 'Doubles'],
+    gameStyles: ['Singles', 'Doubles', 'Competitive'],
     gender: 'Male',
     isNewToArea: false,
     isVerified: true,
-    bio: 'Chris is a passionate tennis player with a 4.0 NTRP rating. He enjoys both singles and doubles matches and is looking for competitive partners in the San Francisco area. Available to play on weekends and evenings.',
+    bio: 'Former World No. 1 and 20-time Grand Slam champion. Known for his elegant style and incredible technique. Looking for hitting partners who appreciate the artistry of tennis.',
     preferredTimes: [
       { dayOfWeek: 'Saturday', startTime: '09:00', endTime: '12:00' },
       { dayOfWeek: 'Sunday', startTime: '14:00', endTime: '17:00' },
-      { dayOfWeek: 'Wednesday', startTime: '18:00', endTime: '20:00' }
+      { dayOfWeek: 'Wednesday', startTime: '10:00', endTime: '12:00' }
     ],
     distance: 2.5
   },
   {
     id: '2',
-    name: 'Sophia Chen',
-    email: 'sophia@example.com',
-    skillLevel: 3.5,
-    location: { city: 'San Francisco', state: 'CA' },
-    gameStyles: ['Singles', 'Doubles'],
-    gender: 'Female',
-    isNewToArea: true,
-    isVerified: true,
-    bio: 'Sophia is a versatile tennis player with a 3.5 NTRP rating. She enjoys both singles and doubles matches and is looking for competitive partners in the San Francisco area. Available to play on weekends and evenings.',
-    preferredTimes: [
-      { dayOfWeek: 'Saturday', startTime: '10:00', endTime: '13:00' },
-      { dayOfWeek: 'Tuesday', startTime: '17:00', endTime: '19:00' },
-      { dayOfWeek: 'Thursday', startTime: '17:00', endTime: '19:00' }
-    ],
-    distance: 5.0
-  },
-  {
-    id: '3',
-    name: 'Ethan Wong',
-    email: 'ethan@example.com',
-    skillLevel: 4.5,
+    name: 'Rafael Nadal',
+    email: 'rafa@tennislegends.com',
+    skillLevel: 6.5,
     location: { city: 'San Francisco', state: 'CA' },
     gameStyles: ['Singles', 'Competitive'],
     gender: 'Male',
     isNewToArea: false,
-    isVerified: false,
-    bio: 'Ethan is a versatile tennis player with a 4.5 NTRP rating. He enjoys both singles and doubles matches and is looking for competitive partners in the San Francisco area. Available to play on weekends and evenings.',
+    isVerified: true,
+    bio: 'The King of Clay! 22-time Grand Slam champion known for incredible fighting spirit and topspin forehand. Always ready for intense training sessions.',
     preferredTimes: [
-      { dayOfWeek: 'Monday', startTime: '06:00', endTime: '08:00' },
-      { dayOfWeek: 'Friday', startTime: '17:30', endTime: '19:30' },
+      { dayOfWeek: 'Monday', startTime: '06:00', endTime: '09:00' },
+      { dayOfWeek: 'Wednesday', startTime: '06:00', endTime: '09:00' },
+      { dayOfWeek: 'Friday', startTime: '06:00', endTime: '09:00' }
+    ],
+    distance: 3.2
+  },
+  {
+    id: '3',
+    name: 'Novak Djokovic',
+    email: 'novak@tennislegends.com',
+    skillLevel: 6.5,
+    location: { city: 'San Francisco', state: 'CA' },
+    gameStyles: ['Singles', 'Competitive'],
+    gender: 'Male',
+    isNewToArea: false,
+    isVerified: true,
+    bio: '23-time Grand Slam champion with incredible flexibility and mental strength. Master of all surfaces. Looking for challenging matches.',
+    preferredTimes: [
+      { dayOfWeek: 'Tuesday', startTime: '07:00', endTime: '10:00' },
+      { dayOfWeek: 'Thursday', startTime: '07:00', endTime: '10:00' },
       { dayOfWeek: 'Sunday', startTime: '08:00', endTime: '11:00' }
     ],
-    distance: 8.2
+    distance: 4.1
   },
   {
     id: '4',
-    name: 'Olivia Kim',
-    email: 'olivia@example.com',
-    skillLevel: 3.0,
+    name: 'Serena Williams',
+    email: 'serena@tennislegends.com',
+    skillLevel: 6.5,
     location: { city: 'San Francisco', state: 'CA' },
-    gameStyles: ['Doubles', 'Social'],
+    gameStyles: ['Singles', 'Doubles', 'Competitive'],
     gender: 'Female',
-    isNewToArea: true,
+    isNewToArea: false,
     isVerified: true,
-    bio: 'Olivia is a versatile tennis player with a 3.0 NTRP rating. She enjoys both singles and doubles matches and is looking for competitive partners in the San Francisco area. Available to play on weekends and evenings.',
+    bio: '23-time Grand Slam singles champion and the greatest female tennis player of all time. Powerful serve and incredible determination. Champion mindset.',
     preferredTimes: [
-      { dayOfWeek: 'Saturday', startTime: '14:00', endTime: '16:00' },
-      { dayOfWeek: 'Sunday', startTime: '10:00', endTime: '12:00' },
-      { dayOfWeek: 'Wednesday', startTime: '19:00', endTime: '21:00' }
+      { dayOfWeek: 'Monday', startTime: '10:00', endTime: '13:00' },
+      { dayOfWeek: 'Wednesday', startTime: '15:00', endTime: '18:00' },
+      { dayOfWeek: 'Saturday', startTime: '10:00', endTime: '13:00' }
     ],
-    distance: 12.5
+    distance: 5.8
   },
   {
     id: '5',
-    name: 'Marcus Johnson',
-    email: 'marcus@example.com',
-    skillLevel: 3.5,
+    name: 'Carlos Alcaraz',
+    email: 'carlos@tennislegends.com',
+    skillLevel: 6.0,
     location: { city: 'Oakland', state: 'CA' },
+    gameStyles: ['Singles', 'Competitive'],
+    gender: 'Male',
+    isNewToArea: true,
+    isVerified: true,
+    bio: 'Young World No. 1 with explosive power and incredible court coverage. The future of tennis! Always excited to practice and improve.',
+    preferredTimes: [
+      { dayOfWeek: 'Tuesday', startTime: '14:00', endTime: '17:00' },
+      { dayOfWeek: 'Thursday', startTime: '14:00', endTime: '17:00' },
+      { dayOfWeek: 'Saturday', startTime: '09:00', endTime: '12:00' }
+    ],
+    distance: 12.3
+  },
+  {
+    id: '6',
+    name: 'Steffi Graf',
+    email: 'steffi@tennislegends.com',
+    skillLevel: 6.5,
+    location: { city: 'Berkeley', state: 'CA' },
+    gameStyles: ['Singles', 'Competitive'],
+    gender: 'Female',
+    isNewToArea: false,
+    isVerified: true,
+    bio: 'Tennis legend with 22 Grand Slam titles and the only player to achieve the Golden Slam. Known for powerful forehand and incredible athleticism.',
+    preferredTimes: [
+      { dayOfWeek: 'Friday', startTime: '09:00', endTime: '12:00' },
+      { dayOfWeek: 'Saturday', startTime: '15:00', endTime: '18:00' },
+      { dayOfWeek: 'Sunday', startTime: '10:00', endTime: '13:00' }
+    ],
+    distance: 16.7
+  },
+  {
+    id: '7',
+    name: 'Andy Murray',
+    email: 'andy@tennislegends.com',
+    skillLevel: 6.0,
+    location: { city: 'San Jose', state: 'CA' },
     gameStyles: ['Singles', 'Doubles'],
     gender: 'Male',
     isNewToArea: false,
     isVerified: true,
-    bio: 'Marcus loves playing tennis and is always looking for new hitting partners. He has been playing for 5 years and enjoys both casual and competitive matches.',
+    bio: '3-time Grand Slam champion and former World No. 1. Master tactician with incredible defensive skills. Olympic gold medalist.',
     preferredTimes: [
-      { dayOfWeek: 'Tuesday', startTime: '18:00', endTime: '20:00' },
-      { dayOfWeek: 'Thursday', startTime: '18:00', endTime: '20:00' },
-      { dayOfWeek: 'Saturday', startTime: '09:00', endTime: '12:00' }
+      { dayOfWeek: 'Monday', startTime: '16:00', endTime: '19:00' },
+      { dayOfWeek: 'Wednesday', startTime: '16:00', endTime: '19:00' },
+      { dayOfWeek: 'Friday', startTime: '16:00', endTime: '19:00' }
     ],
-    distance: 15.3
+    distance: 22.1
   },
   {
-    id: '6',
-    name: 'Isabella Rodriguez',
-    email: 'isabella@example.com',
-    skillLevel: 4.0,
-    location: { city: 'Berkeley', state: 'CA' },
-    gameStyles: ['Doubles', 'Social'],
+    id: '8',
+    name: 'Iga Swiatek',
+    email: 'iga@tennislegends.com',
+    skillLevel: 6.0,
+    location: { city: 'Palo Alto', state: 'CA' },
+    gameStyles: ['Singles', 'Competitive'],
     gender: 'Female',
     isNewToArea: true,
-    isVerified: false,
-    bio: 'Isabella recently moved to the Bay Area and is excited to find new tennis partners. She prefers doubles play and enjoys the social aspect of tennis.',
+    isVerified: true,
+    bio: 'Current World No. 1 with incredible mental strength and powerful topspin. Multiple Grand Slam champion who loves to compete at the highest level.',
     preferredTimes: [
-      { dayOfWeek: 'Friday', startTime: '17:00', endTime: '19:00' },
-      { dayOfWeek: 'Saturday', startTime: '10:00', endTime: '13:00' },
-      { dayOfWeek: 'Sunday', startTime: '15:00', endTime: '17:00' }
+      { dayOfWeek: 'Tuesday', startTime: '11:00', endTime: '14:00' },
+      { dayOfWeek: 'Thursday', startTime: '11:00', endTime: '14:00' },
+      { dayOfWeek: 'Sunday', startTime: '13:00', endTime: '16:00' }
     ],
-    distance: 18.7
+    distance: 25.4
   }
 ];
 

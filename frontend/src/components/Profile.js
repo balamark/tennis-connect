@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/config';
 import './Profile.css';
+import Modal from './Modal';
 
 const Profile = () => {
   const [profile, setProfile] = useState(null);
@@ -8,6 +9,14 @@ const Profile = () => {
   const [error, setError] = useState('');
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState(null);
+  
+  // Modal state
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
   
   const gameStyles = ['Singles', 'Doubles', 'Competitive', 'Social'];
   const skillLevels = ['2.0', '2.5', '3.0', '3.5', '4.0', '4.5', '5.0', '5.5+'];
@@ -178,10 +187,22 @@ const Profile = () => {
       setProfile(formData);
       setEditing(false);
       
-      alert('Profile updated successfully!');
+      // Show success modal
+      setModalState({
+        isOpen: true,
+        type: 'success',
+        title: 'Success!',
+        message: 'Your profile has been updated successfully!'
+      });
     } catch (err) {
       console.error('Error updating profile:', err);
-      alert('Failed to update profile. Please try again.');
+      // Show error modal
+      setModalState({
+        isOpen: true,
+        type: 'error',
+        title: 'Update Failed',
+        message: 'Failed to update profile. Please try again.'
+      });
     }
   };
 
@@ -530,6 +551,15 @@ const Profile = () => {
           </form>
         </div>
       )}
+      
+      {/* Modern Modal */}
+      <Modal
+        isOpen={modalState.isOpen}
+        onClose={() => setModalState({ ...modalState, isOpen: false })}
+        type={modalState.type}
+        title={modalState.title}
+        message={modalState.message}
+      />
     </div>
   );
 };
