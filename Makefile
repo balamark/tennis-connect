@@ -47,4 +47,37 @@ reset: ## Reset everything (clean + start fresh)
 
 status: ## Show service status
 	@echo "📊 Service Status:"
-	@docker-compose ps 
+	@docker-compose ps
+
+deploy: ## Deploy to production (uses docker-compose.prod.yml)
+	@echo "🚀 Deploying to production..."
+	@docker-compose -f docker-compose.prod.yml up -d --build
+
+deploy-stop: ## Stop production deployment
+	@echo "🛑 Stopping production deployment..."
+	@docker-compose -f docker-compose.prod.yml down
+
+db: ## Connect to database
+	@docker-compose exec db psql -U postgres -d tennis_connect
+
+db-status: ## Check database status and show user count
+	@echo "🗄️ Database Status:"
+	@docker-compose exec db pg_isready -U postgres
+	@echo "📊 User count:"
+	@docker-compose exec db psql -U postgres -d tennis_connect -c "SELECT COUNT(*) as total_users FROM users;"
+	@echo "📋 Recent users:"
+	@docker-compose exec db psql -U postgres -d tennis_connect -c "SELECT email, created_at FROM users ORDER BY created_at DESC LIMIT 5;"
+
+db-backup: ## Backup database to file
+	@echo "💾 Creating database backup..."
+	@mkdir -p backups
+	@docker-compose exec db pg_dump -U postgres tennis_connect > backups/tennis_connect_backup_$(shell date +%Y%m%d_%H%M%S).sql
+	@echo "✅ Backup saved to backups/"
+
+db-restore: ## Restore database from latest backup (DANGEROUS!)
+	@echo "⚠️  This will REPLACE all current data!"
+	@echo "Press Ctrl+C to cancel, or Enter to continue..."
+	@read
+	@echo "🔄 Restoring from latest backup..."
+	@ls -t backups/*.sql | head -1 | xargs -I {} sh -c 'cat {} | docker-compose exec -T db psql -U postgres -d tennis_connect'
+	@echo "✅ Database restored!" 

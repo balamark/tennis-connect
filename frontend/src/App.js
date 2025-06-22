@@ -17,6 +17,8 @@ import Register from './components/Register';
 import Profile from './components/Profile';
 import NotificationDemo from './components/NotificationDemo';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { DemoModeProvider } from './contexts/DemoModeContext';
+import DemoModeBanner from './components/DemoModeBanner';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -50,17 +52,20 @@ function App() {
   };
 
   return (
-    <NotificationProvider>
-      <Router>
-        <div className="relative flex size-full min-h-screen flex-col bg-slate-50 group/design-root overflow-x-hidden font-sans">
-          <div className="layout-container flex h-full grow flex-col">
-            <Header 
-              isAuthenticated={isAuthenticated}
-              userName={userName}
-              onLogout={handleLogout}
-            />
-            
-            <main className="flex-1">
+    <DemoModeProvider>
+      <NotificationProvider>
+        <Router>
+          <div className="relative flex size-full min-h-screen flex-col bg-slate-50 group/design-root overflow-x-hidden font-sans">
+            <div className="layout-container flex h-full grow flex-col">
+              <Header 
+                isAuthenticated={isAuthenticated}
+                userName={userName}
+                onLogout={handleLogout}
+              />
+              
+              <DemoModeBanner />
+              
+              <main className="flex-1">
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/nearby-players" element={<NearbyPlayers />} />
@@ -99,6 +104,7 @@ function App() {
         </div>
       </Router>
     </NotificationProvider>
+    </DemoModeProvider>
   );
 }
 

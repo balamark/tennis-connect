@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Notifications from './Notifications';
 import { useNotifications } from '../contexts/NotificationContext';
+import DemoModeToggle from './DemoModeToggle';
 
 const Header = ({ isAuthenticated, userName, onLogout }) => {
   const location = useLocation();
@@ -89,6 +90,9 @@ const Header = ({ isAuthenticated, userName, onLogout }) => {
 
           {/* Desktop Auth Section */}
           <div className="flex items-center gap-3">
+            {/* Demo Mode Toggle - Always visible */}
+            <DemoModeToggle />
+            
             {isAuthenticated ? (
               <>
                 {/* Notification Bell */}
@@ -154,6 +158,9 @@ const Header = ({ isAuthenticated, userName, onLogout }) => {
 
         {/* Mobile Menu Button and Auth */}
         <div className="flex lg:hidden items-center gap-3">
+          {/* Demo Mode Toggle - Mobile */}
+          <DemoModeToggle className="scale-90" />
+          
           {isAuthenticated && (
             <>
               {/* Mobile Notification Bell */}

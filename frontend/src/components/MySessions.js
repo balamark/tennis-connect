@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useDemoMode } from '../contexts/DemoModeContext';
+import { getMockSessions } from '../data/mockData';
 import MatchingSession from './MatchingSession';
 import { bookingApi } from '../api/bookingApi';
 
 const MySessions = () => {
+  const { isDemoMode } = useDemoMode();
   const [bookings, setBookings] = useState([]);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -10,11 +13,18 @@ const MySessions = () => {
 
   useEffect(() => {
     loadUserBookings();
-  }, []);
+  }, [isDemoMode]);
 
   const loadUserBookings = async () => {
     try {
       setLoading(true);
+      
+      // Use mock data in demo mode
+      if (isDemoMode) {
+        setBookings(getMockSessions());
+        setLoading(false);
+        return;
+      }
       
       // Try to get bookings from API
       try {
@@ -24,45 +34,7 @@ const MySessions = () => {
         console.error('API not available, using mock data:', apiError);
         
         // Fallback to mock data
-        const mockBookings = [
-          {
-            id: 1,
-            court_id: 1,
-            court_name: 'Court 1',
-            start_time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
-            end_time: new Date(Date.now() + 25 * 60 * 60 * 1000).toISOString(),
-            game_type: 'Singles',
-            player_count: 2,
-            status: 'confirmed',
-            notes: 'Looking forward to a great game!',
-            created_at: new Date().toISOString()
-          },
-          {
-            id: 2,
-            court_id: 3,
-            court_name: 'Court 3',
-            start_time: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days from now
-            end_time: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString(),
-            game_type: 'Doubles',
-            player_count: 4,
-            status: 'confirmed',
-            notes: 'Doubles match with friends',
-            created_at: new Date().toISOString()
-          },
-          {
-            id: 3,
-            court_id: 2,
-            court_name: 'Court 2',
-            start_time: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // Yesterday
-            end_time: new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString(),
-            game_type: 'Singles',
-            player_count: 2,
-            status: 'completed',
-            notes: 'Great match!',
-            created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-          }
-        ];
-        setBookings(mockBookings);
+        setBookings(getMockSessions());
       }
     } catch (error) {
       console.error('Error loading bookings:', error);
@@ -79,12 +51,16 @@ const MySessions = () => {
     try {
       setLoading(true);
       
-      try {
-        await bookingApi.cancelBooking(bookingId);
-        alert('Booking cancelled successfully!');
-      } catch (apiError) {
-        console.error('API not available:', apiError);
+      if (isDemoMode) {
         alert('Booking cancelled successfully! (Demo mode)');
+      } else {
+        try {
+          await bookingApi.cancelBooking(bookingId);
+          alert('Booking cancelled successfully!');
+        } catch (apiError) {
+          console.error('API not available:', apiError);
+          alert('Failed to cancel booking. Please try again or switch to demo mode.');
+        }
       }
       
       // Refresh bookings

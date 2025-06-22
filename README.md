@@ -37,6 +37,10 @@ make test       # Run all tests
 make clean      # Clean up Docker resources
 make reset      # Reset everything fresh
 make status     # Show service status
+make db         # Connect to database
+make db-status  # Check database status and user count
+make db-backup  # Backup database to file
+make db-restore # Restore from latest backup
 ```
 
 ## 🏗️ What You Get
@@ -102,21 +106,30 @@ docker-compose exec frontend npm test -- --watchAll=false
 
 ## 🚀 Deployment
 
-For production deployment:
+### Local Development
+```bash
+make start    # Uses development React server on port 3000
+```
 
-1. **Update environment variables** in `.env`:
+### Production Deployment
+
+1. **Create production environment file**:
    ```bash
-   APP_ENV=production
-   JWT_SECRET=your-secure-production-secret
-   # Add other production values
+   cp env.production.example .env
+   # Edit .env with your production values
    ```
 
-2. **Deploy with Docker Compose**:
+2. **Deploy to production**:
    ```bash
-   docker-compose up -d --build
+   make deploy   # Uses nginx production build on port 80
    ```
 
-3. **Or use any Docker hosting** (DigitalOcean, AWS ECS, etc.)
+3. **For cloud deployment** (GCP, AWS, DigitalOcean):
+   ```bash
+   # The multi-stage Dockerfile automatically builds for production
+   docker build --target production -t tennis-connect-frontend ./frontend
+   docker build -t tennis-connect-backend ./backend
+   ```
 
 ## 🐛 Troubleshooting
 
@@ -143,6 +156,25 @@ make logs               # All services
 docker-compose logs backend    # Specific service
 ```
 
+**Database issues:**
+```bash
+# Connect to database
+docker-compose exec db psql -U postgres -d tennis_connect
+
+# Check if tables exist
+docker-compose exec db psql -U postgres -d tennis_connect -c "\dt"
+
+# Check users table (for login persistence)
+docker-compose exec db psql -U postgres -d tennis_connect -c "SELECT id, email, created_at FROM users;"
+
+# Check database connection
+docker-compose exec db pg_isready -U postgres
+
+# Reset database completely
+docker-compose down -v  # Remove volumes (deletes all data!)
+make start              # Start fresh
+```
+
 ## 📊 Monitoring
 
 ```bash
@@ -154,6 +186,72 @@ make logs
 
 # Resource usage
 docker stats
+```
+
+## 🗄️ Database Troubleshooting
+
+### Check Database Status
+```bash
+# Is database running?
+docker-compose exec db pg_isready -U postgres
+
+# Connect to database
+docker-compose exec db psql -U postgres -d tennis_connect
+```
+
+### Inspect Database Schema
+```bash
+# List all tables
+docker-compose exec db psql -U postgres -d tennis_connect -c "\dt"
+
+# Describe users table structure
+docker-compose exec db psql -U postgres -d tennis_connect -c "\d users"
+
+# Check if migrations ran
+docker-compose exec db psql -U postgres -d tennis_connect -c "SELECT * FROM schema_migrations;"
+```
+
+### Check Data Persistence
+```bash
+# View all users (check login persistence)
+docker-compose exec db psql -U postgres -d tennis_connect -c "SELECT id, email, created_at FROM users LIMIT 10;"
+
+# Count total users
+docker-compose exec db psql -U postgres -d tennis_connect -c "SELECT COUNT(*) FROM users;"
+
+# Check recent activity
+docker-compose exec db psql -U postgres -d tennis_connect -c "SELECT * FROM users ORDER BY created_at DESC LIMIT 5;"
+```
+
+### Database Backup & Recovery
+```bash
+# 🚨 ALWAYS backup before making changes!
+make db-backup
+
+# View backups
+ls -la backups/
+
+# Restore from backup (DANGEROUS - replaces all data!)
+make db-restore
+```
+
+### ⚠️ CRITICAL: Avoiding Data Loss
+
+**NEVER run these commands if you have important user data:**
+```bash
+# ❌ These commands DESTROY ALL USER DATA:
+docker-compose down -v          # Removes database volume
+make clean                      # Removes all Docker data  
+make reset                      # Completely resets everything
+docker volume rm tennis-connect_postgres_data
+```
+
+**✅ Safe restart commands:**
+```bash
+# Safe - preserves database
+make stop && make start
+make restart
+docker-compose restart
 ```
 
 ## 🎯 Development Tips

@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/config';
+import { useDemoMode } from '../contexts/DemoModeContext';
+import { getMockBulletins } from '../data/mockData';
 
 const PlayBulletin = () => {
+  const { isDemoMode } = useDemoMode();
   const [bulletins, setBulletins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -38,6 +41,16 @@ const PlayBulletin = () => {
 
   const fetchBulletins = useCallback(async () => {
     setLoading(true);
+    
+    // Use mock data in demo mode
+    if (isDemoMode) {
+      setBulletins(getMockBulletins());
+      setShowingMockData(true);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+    
     try {
       // Build query parameters
       let queryParams = new URLSearchParams();
@@ -93,7 +106,7 @@ const PlayBulletin = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters.skillLevel, filters.gameType, filters.startAfter, showExpired]);
+  }, [isDemoMode, filters.skillLevel, filters.gameType, filters.startAfter, showExpired]);
 
   useEffect(() => {
     fetchBulletins();
@@ -248,111 +261,7 @@ const PlayBulletin = () => {
     return bulletin.userId === currentUserId;
   };
 
-  // Mock data for development with famous tennis players
-  const getMockBulletins = () => [
-    {
-      id: '1',
-      userId: 'user1',
-      userName: 'Sarah',
-      userPhoto: 'https://images.unsplash.com/photo-1554284126-aa88f22d8b74?w=50&h=50&fit=crop&crop=face',
-      title: 'Looking for a partner for a friendly match',
-      description: 'Need a hitting partner for clay court training. Preparing for upcoming tournaments. High-intensity baseline work.',
-      location: {
-        zipCode: '94117',
-        city: 'San Francisco',
-        state: 'CA',
-      },
-      courtName: 'Central Park Courts',
-      startTime: new Date(Date.now() + 5 * 3600000).toISOString(), // 5 hours from now
-      endTime: new Date(Date.now() + 7 * 3600000).toISOString(),   // 7 hours from now
-      skillLevel: 'Intermediate',
-      gameType: 'Singles',
-      responses: [
-        {
-          id: 'resp1',
-          userId: 'user2',
-          userName: 'Novak Djokovic',
-          userPhoto: 'https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=50&h=50&fit=crop&crop=face',
-          message: 'Perfect! I love clay court practice. Let\'s work on our defensive games together.',
-          status: 'Pending',
-          createdAt: new Date(Date.now() - 30 * 60000).toISOString(), // 30 mins ago
-        }
-      ],
-      isActive: true,
-      createdAt: new Date(Date.now() - 2 * 3600000).toISOString(), // 2 hours ago
-    },
-    {
-      id: '2',
-      userId: 'user3',
-      userName: 'Alex',
-      userPhoto: 'https://images.unsplash.com/photo-1594736797933-d0f7dea99b02?w=50&h=50&fit=crop&crop=face',
-      title: 'Seeking a doubles partner for a tournament',
-      description: 'Looking for a strong doubles partner for Saturday morning. Focus on net play and powerful serves.',
-      location: {
-        zipCode: '94158',
-        city: 'San Francisco',
-        state: 'CA',
-      },
-      courtName: 'Riverside Tennis Club',
-      startTime: new Date(Date.now() + 48 * 3600000).toISOString(), // 48 hours from now
-      endTime: new Date(Date.now() + 52 * 3600000).toISOString(),   // 52 hours from now
-      skillLevel: 'Advanced',
-      gameType: 'Doubles',
-      responses: [
-        {
-          id: 'resp2',
-          userId: 'user4',
-          userName: 'Venus Williams',
-          userPhoto: 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=50&h=50&fit=crop&crop=face',
-          message: 'Sister! Let\'s dominate the court together like old times 🔥',
-          status: 'Accepted',
-          createdAt: new Date(Date.now() - 60 * 60000).toISOString(), // 1 hour ago
-        }
-      ],
-      isActive: true,
-      createdAt: new Date(Date.now() - 12 * 3600000).toISOString(), // 12 hours ago
-    },
-    {
-      id: '3',
-      userId: 'user5',
-      userName: 'Emily',
-      userPhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face',
-      title: 'Casual hitting session',
-      description: 'Elegant tennis session focusing on shot placement and court craft. All levels welcome for learning experience.',
-      location: {
-        zipCode: '94105',
-        city: 'San Francisco',
-        state: 'CA',
-      },
-      courtName: 'Lakeside Courts',
-      startTime: new Date(Date.now() + 24 * 3600000).toISOString(), // 24 hours from now
-      endTime: new Date(Date.now() + 26 * 3600000).toISOString(),   // 26 hours from now
-      skillLevel: 'Beginner',
-      gameType: 'Either',
-      responses: [
-        {
-          id: 'resp3',
-          userId: 'user6',
-          userName: 'Andy Murray',
-          userPhoto: 'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=50&h=50&fit=crop&crop=face',
-          message: 'Would love to learn from the master! Count me in for some tactical tennis.',
-          status: 'Pending',
-          createdAt: new Date(Date.now() - 15 * 60000).toISOString(), // 15 mins ago
-        },
-        {
-          id: 'resp4',
-          userId: 'user7',
-          userName: 'Stan Wawrinka',
-          userPhoto: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=50&h=50&fit=crop&crop=face',
-          message: 'One-handed backhand clinic? I\'m there! 🎾',
-          status: 'Pending',
-          createdAt: new Date(Date.now() - 45 * 60000).toISOString(), // 45 mins ago
-        }
-      ],
-      isActive: true,
-      createdAt: new Date(Date.now() - 6 * 3600000).toISOString(), // 6 hours ago
-    }
-  ];
+
 
   if (loading) {
     return (

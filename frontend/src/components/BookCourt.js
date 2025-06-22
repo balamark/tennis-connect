@@ -3,8 +3,11 @@ import Calendar from './Calendar';
 import TimeSlotTable from './TimeSlotTable';
 import BookingSummary from './BookingSummary';
 import { bookingApi } from '../api/bookingApi';
+import { useDemoMode } from '../contexts/DemoModeContext';
+import { getMockCourts, getMockCourtAvailability } from '../data/mockData';
 
 const BookCourt = () => {
+  const { isDemoMode } = useDemoMode();
   const [courts, setCourts] = useState([]);
   const [selectedCourt, setSelectedCourt] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -13,11 +16,20 @@ const BookCourt = () => {
   const [loading, setLoading] = useState(false);
   const [courtsLoading, setCourtsLoading] = useState(true);
 
-  // Load courts from API
+  // Load courts from API or use mock data in demo mode
   useEffect(() => {
     const loadCourts = async () => {
       try {
         setCourtsLoading(true);
+        
+        // Use mock data in demo mode
+        if (isDemoMode) {
+          const mockCourts = getMockCourts();
+          setCourts(mockCourts);
+          setSelectedCourt(mockCourts[0]);
+          setCourtsLoading(false);
+          return;
+        }
         const courtsData = await bookingApi.getCourts();
         
         // If API returns courts, use them; otherwise use mock data
@@ -92,12 +104,22 @@ const BookCourt = () => {
     };
 
     loadCourts();
-  }, []);
+  }, [isDemoMode]);
 
   // Load availability when court or date changes
   useEffect(() => {
     const loadAvailability = async () => {
       if (!selectedCourt || !selectedDate) return;
+
+      // Use mock availability in demo mode
+      if (isDemoMode) {
+        const mockAvailability = getMockCourtAvailability(selectedCourt.id, selectedDate);
+        setAvailability(prev => ({
+          ...prev,
+          [`${selectedCourt.id}-${selectedDate.toDateString()}`]: mockAvailability
+        }));
+        return;
+      }
 
       try {
         const availabilityData = await bookingApi.getCourtAvailability(selectedCourt.id, selectedDate);
@@ -116,7 +138,7 @@ const BookCourt = () => {
     };
 
     loadAvailability();
-  }, [selectedCourt, selectedDate]);
+  }, [isDemoMode, selectedCourt, selectedDate]);
 
   const handleCourtSelect = (court) => {
     setSelectedCourt(court);
@@ -164,14 +186,18 @@ const BookCourt = () => {
         notes: `Booking for ${selectedCourt.name} on ${selectedDate.toDateString()} at ${selectedTimeSlot.time}`
       };
 
-      // Try to create booking via API
-      try {
-        const result = await bookingApi.createBooking(bookingData);
-        alert('Booking successful! Your booking ID is: ' + result.id);
-      } catch (apiError) {
-        console.error('API booking failed:', apiError);
+      // Handle booking based on demo mode
+      if (isDemoMode) {
         // Simulate successful booking for demo
-        alert('Booking successful! (Demo mode - API not available)');
+        alert('Booking successful! (Demo mode - booking simulation)');
+      } else {
+        try {
+          const result = await bookingApi.createBooking(bookingData);
+          alert('Booking successful! Your booking ID is: ' + result.id);
+        } catch (apiError) {
+          console.error('API booking failed:', apiError);
+          alert('Booking failed. Please try again or switch to demo mode.');
+        }
       }
       
       // Reset form

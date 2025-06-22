@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: tennis_connect
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/migrations:/docker-entrypoint-initdb.d
@@ -28,16 +28,16 @@ services:
       dockerfile: Dockerfile
     container_name: tennis-connect-backend
     environment:
-      - APP_ENV=development
+      - APP_ENV=production
       - DB_HOST=db
       - DB_PORT=5432
       - DB_USER=postgres
-      - DB_PASSWORD=postgres
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
       - DB_NAME=tennis_connect
-      - DB_SSLMODE=disable
-      - JWT_SECRET=tennis-connect-dev-secret-change-in-production
-      - JWT_EXPIRATION=60
-      - SERVER_PORT=8080
+      - DB_SSLMODE=require
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=30
+      - PORT=8080
     ports:
       - "8080:8080"
     depends_on:
@@ -46,54 +46,29 @@ services:
     networks:
       - tennis-connect-network
     restart: unless-stopped
-    volumes:
-      - ./backend:/app
-      - /app/tmp  # Exclude tmp directory from volume mount
-    develop:
-      watch:
-        - action: rebuild
-          path: ./backend
-          ignore:
-            - tmp/
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  # Frontend
+  # Frontend (Production)
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      target: development  # Use development stage
+      target: production  # Use production stage
       args:
-        - REACT_APP_API_URL=http://localhost:8080/api
-        - REACT_APP_ENV=development
-        - BROWSER=none
-        - CHOKIDAR_USEPOLLING=true
+        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8080/api}
+        - REACT_APP_ENV=production
     container_name: tennis-connect-frontend
-    environment:
-      - BROWSER=none
-      - CHOKIDAR_USEPOLLING=true
     ports:
-      - "3000:3000"
+      - "80:80"
     depends_on:
       - backend
     networks:
       - tennis-connect-network
     restart: unless-stopped
-    volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
-    develop:
-      watch:
-        - action: sync
-          path: ./frontend/src
-          target: /app/src
-        - action: sync  
-          path: ./frontend/public
-          target: /app/public
 
 volumes:
   postgres_data:

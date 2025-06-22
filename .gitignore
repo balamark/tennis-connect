@@ -410,4 +410,4 @@ local-*.sh
 !.github/
 !.gitlab-ci.yml
 !.travis.yml
-!.circleci/ 
+!.circleci/ backups/

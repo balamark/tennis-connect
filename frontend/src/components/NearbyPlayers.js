@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './NearbyPlayers.css';
+import { useDemoMode } from '../contexts/DemoModeContext';
+import { getMockPlayers } from '../data/mockData';
 
 const NearbyPlayers = () => {
+  const { isDemoMode, enableDemoMode } = useDemoMode();
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isDemoMode, setIsDemoMode] = useState(true);
   const [viewMode, setViewMode] = useState('compact'); // 'detailed' or 'compact'
   const [searchMetadata, setSearchMetadata] = useState(null);
 
@@ -23,117 +25,7 @@ const NearbyPlayers = () => {
   const [stylesDropdownOpen, setStylesDropdownOpen] = useState(false);
   const [daysDropdownOpen, setDaysDropdownOpen] = useState(false);
 
-  // Mock data for demo mode only
-  const getMockPlayers = () => [
-    {
-      id: '1',
-      name: 'Chris Lee',
-      email: 'chris@example.com',
-      skillLevel: 4.0,
-      location: { city: 'San Francisco', state: 'CA' },
-      gameStyles: ['Singles', 'Doubles'],
-      gender: 'Male',
-      isNewToArea: false,
-      isVerified: true,
-      bio: 'Chris is a passionate tennis player with a 4.0 NTRP rating. He enjoys both singles and doubles matches and is looking for competitive partners in the San Francisco area. Available to play on weekends and evenings.',
-      preferredTimes: [
-        { dayOfWeek: 'Saturday', startTime: '09:00', endTime: '12:00' },
-        { dayOfWeek: 'Sunday', startTime: '14:00', endTime: '17:00' },
-        { dayOfWeek: 'Wednesday', startTime: '18:00', endTime: '20:00' }
-      ],
-      distance: 2.5
-    },
-    {
-      id: '2',
-      name: 'Sophia Chen',
-      email: 'sophia@example.com',
-      skillLevel: 3.5,
-      location: { city: 'San Francisco', state: 'CA' },
-      gameStyles: ['Singles', 'Doubles'],
-      gender: 'Female',
-      isNewToArea: true,
-      isVerified: true,
-      bio: 'Sophia is a versatile tennis player with a 3.5 NTRP rating. She enjoys both singles and doubles matches and is looking for competitive partners in the San Francisco area. Available to play on weekends and evenings.',
-      preferredTimes: [
-        { dayOfWeek: 'Saturday', startTime: '10:00', endTime: '13:00' },
-        { dayOfWeek: 'Tuesday', startTime: '17:00', endTime: '19:00' },
-        { dayOfWeek: 'Thursday', startTime: '17:00', endTime: '19:00' }
-      ],
-      distance: 5.0
-    },
-    {
-      id: '3',
-      name: 'Ethan Wong',
-      email: 'ethan@example.com',
-      skillLevel: 4.5,
-      location: { city: 'San Francisco', state: 'CA' },
-      gameStyles: ['Singles', 'Competitive'],
-      gender: 'Male',
-      isNewToArea: false,
-      isVerified: false,
-      bio: 'Ethan is a versatile tennis player with a 4.5 NTRP rating. He enjoys both singles and doubles matches and is looking for competitive partners in the San Francisco area. Available to play on weekends and evenings.',
-      preferredTimes: [
-        { dayOfWeek: 'Monday', startTime: '06:00', endTime: '08:00' },
-        { dayOfWeek: 'Friday', startTime: '17:30', endTime: '19:30' },
-        { dayOfWeek: 'Sunday', startTime: '08:00', endTime: '11:00' }
-      ],
-      distance: 8.2
-    },
-    {
-      id: '4',
-      name: 'Olivia Kim',
-      email: 'olivia@example.com',
-      skillLevel: 3.0,
-      location: { city: 'San Francisco', state: 'CA' },
-      gameStyles: ['Doubles', 'Social'],
-      gender: 'Female',
-      isNewToArea: true,
-      isVerified: true,
-      bio: 'Olivia is a versatile tennis player with a 3.0 NTRP rating. She enjoys both singles and doubles matches and is looking for competitive partners in the San Francisco area. Available to play on weekends and evenings.',
-      preferredTimes: [
-        { dayOfWeek: 'Saturday', startTime: '14:00', endTime: '16:00' },
-        { dayOfWeek: 'Sunday', startTime: '10:00', endTime: '12:00' },
-        { dayOfWeek: 'Wednesday', startTime: '19:00', endTime: '21:00' }
-      ],
-      distance: 12.5
-    },
-    {
-      id: '5',
-      name: 'Marcus Johnson',
-      email: 'marcus@example.com',
-      skillLevel: 3.5,
-      location: { city: 'Oakland', state: 'CA' },
-      gameStyles: ['Singles', 'Doubles'],
-      gender: 'Male',
-      isNewToArea: false,
-      isVerified: true,
-      bio: 'Marcus loves playing tennis and is always looking for new hitting partners. He has been playing for 5 years and enjoys both casual and competitive matches.',
-      preferredTimes: [
-        { dayOfWeek: 'Tuesday', startTime: '18:00', endTime: '20:00' },
-        { dayOfWeek: 'Thursday', startTime: '18:00', endTime: '20:00' },
-        { dayOfWeek: 'Saturday', startTime: '09:00', endTime: '12:00' }
-      ],
-      distance: 15.3
-    },
-    {
-      id: '6',
-      name: 'Isabella Rodriguez',
-      email: 'isabella@example.com',
-      skillLevel: 4.0,
-      location: { city: 'Berkeley', state: 'CA' },
-      gameStyles: ['Doubles', 'Social'],
-      gender: 'Female',
-      isNewToArea: true,
-      isVerified: false,
-      bio: 'Isabella recently moved to the Bay Area and is excited to find new tennis partners. She prefers doubles play and enjoys the social aspect of tennis.',
-      preferredTimes: [
-        { dayOfWeek: 'Friday', startTime: '17:00', endTime: '19:00' },
-        { dayOfWeek: 'Saturday', startTime: '10:00', endTime: '13:00' },
-        { dayOfWeek: 'Sunday', startTime: '15:00', endTime: '17:00' }
-      ],
-      distance: 18.7
-    }
-  ];
+
 
   // Apply filters to player list
   const applyFilters = useCallback((playerList) => {
@@ -445,7 +337,7 @@ const NearbyPlayers = () => {
             </button>
             <button 
               className="error-action-button secondary"
-              onClick={() => setIsDemoMode(true)}
+              onClick={enableDemoMode}
             >
               Switch to Demo Mode
             </button>
@@ -467,7 +359,7 @@ const NearbyPlayers = () => {
             </button>
             <button 
               className="error-action-button secondary"
-              onClick={() => setIsDemoMode(true)}
+              onClick={enableDemoMode}
             >
               Use Demo Mode
             </button>
@@ -489,7 +381,7 @@ const NearbyPlayers = () => {
             </button>
             <button 
               className="error-action-button secondary"
-              onClick={() => setIsDemoMode(true)}
+              onClick={enableDemoMode}
             >
               Switch to Demo Mode
             </button>
@@ -509,33 +401,12 @@ const NearbyPlayers = () => {
       <div className="filters-sidebar">
         <h2>Players Near You</h2>
         
-        {/* Demo Mode Toggle */}
+        {/* Demo Mode Toggle - Now handled globally */}
         <div className="demo-mode-toggle">
           <div className="toggle-container">
-            <div 
-              className={`toggle-switch ${isDemoMode ? 'demo-active' : 'live-active'}`}
-              onClick={() => {
-                const newMode = !isDemoMode;
-                setIsDemoMode(newMode);
-                setError(''); // Clear any existing errors when switching modes
-                
-                // If switching to live mode and user is not authenticated, show friendly message
-                if (!newMode) {
-                  const token = localStorage.getItem('token');
-                  if (!token) {
-                    setError('Please log in to view live players. Using demo mode for now.');
-                    setIsDemoMode(true); // Stay in demo mode if not authenticated
-                    return;
-                  }
-                }
-              }}
-            />
-            <span className="toggle-label">
-              {isDemoMode ? '🎭 Demo' : '🔴 Live'}
-            </span>
-          </div>
-          <div className="demo-indicator">
-            {isDemoMode ? 'Showing sample players for testing' : 'Connected to live player database'}
+            <div className="demo-indicator">
+              {isDemoMode ? 'Showing sample players for testing' : 'Connected to live player database'}
+            </div>
           </div>
         </div>
 
