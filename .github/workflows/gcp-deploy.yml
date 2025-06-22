@@ -1,5 +1,10 @@
 name: Build and Deploy to Google Cloud Platform
 
+# This workflow deploys Tennis Connect to:
+# - Google Cloud Run (Backend & Frontend)
+# - Google Artifact Registry (Docker Images)  
+# - Supabase (PostgreSQL Database)
+
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   GAR_LOCATION: us-central1  # Change this to your preferred region
@@ -66,7 +71,7 @@ jobs:
             DB_PORT=5432
             DB_USER=${{ secrets.DB_USER }}
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            DB_NAME=tennis_connect
+            DB_NAME=postgres
             DB_SSLMODE=require
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             JWT_EXPIRATION=30

@@ -57,27 +57,29 @@ deploy-stop: ## Stop production deployment
 	@echo "🛑 Stopping production deployment..."
 	@docker-compose -f docker-compose.prod.yml down
 
-db: ## Connect to database
-	@docker-compose exec db psql -U postgres -d tennis_connect
+db-check: ## Check database connection (Supabase)
+	@echo "🗄️ Checking Supabase database connection..."
+	@curl -s http://localhost:8080/api/health | grep -q "ok" && echo "✅ Database connection: OK" || echo "❌ Database connection: FAILED"
+	@echo "📊 Backend logs (database-related):"
+	@docker-compose logs backend | grep -i "database\|postgres\|supabase" | tail -5
 
-db-status: ## Check database status and show user count
-	@echo "🗄️ Database Status:"
-	@docker-compose exec db pg_isready -U postgres
-	@echo "📊 User count:"
-	@docker-compose exec db psql -U postgres -d tennis_connect -c "SELECT COUNT(*) as total_users FROM users;"
-	@echo "📋 Recent users:"
-	@docker-compose exec db psql -U postgres -d tennis_connect -c "SELECT email, created_at FROM users ORDER BY created_at DESC LIMIT 5;"
+db-status: ## Show database connection status
+	@echo "🗄️ Supabase Database Status:"
+	@echo "🔗 Dashboard: https://supabase.com/dashboard/projects"
+	@echo "📊 Connection test:"
+	@curl -s -w "Response time: %{time_total}s\n" http://localhost:8080/api/health || echo "❌ Backend not responding"
+	@echo "🔧 Environment check:"
+	@docker-compose exec backend env | grep DB_ | sed 's/DB_PASSWORD=.*/DB_PASSWORD=***HIDDEN***/'
 
-db-backup: ## Backup database to file
-	@echo "💾 Creating database backup..."
-	@mkdir -p backups
-	@docker-compose exec db pg_dump -U postgres tennis_connect > backups/tennis_connect_backup_$(shell date +%Y%m%d_%H%M%S).sql
-	@echo "✅ Backup saved to backups/"
+db-logs: ## View database-related logs
+	@echo "📋 Database connection logs:"
+	@docker-compose logs backend | grep -i "database\|postgres\|supabase\|connection" | tail -20
 
-db-restore: ## Restore database from latest backup (DANGEROUS!)
-	@echo "⚠️  This will REPLACE all current data!"
-	@echo "Press Ctrl+C to cancel, or Enter to continue..."
-	@read
-	@echo "🔄 Restoring from latest backup..."
-	@ls -t backups/*.sql | head -1 | xargs -I {} sh -c 'cat {} | docker-compose exec -T db psql -U postgres -d tennis_connect'
-	@echo "✅ Database restored!" 
+db-dashboard: ## Open Supabase dashboard
+	@echo "🌐 Opening Supabase dashboard..."
+	@echo "Visit: https://supabase.com/dashboard/projects"
+	@echo "💡 Use the web interface to:"
+	@echo "   - View and edit data (Table Editor)"
+	@echo "   - Run SQL queries (SQL Editor)"
+	@echo "   - Check logs and metrics"
+	@echo "   - Manage backups" 

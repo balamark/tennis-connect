@@ -14,7 +14,7 @@ This guide will help you deploy Tennis Connect to Google Cloud Platform using Cl
 The application will be deployed using:
 - **Google Cloud Run**: For backend API and frontend hosting
 - **Google Artifact Registry**: For Docker image storage
-- **Google Cloud SQL**: For PostgreSQL database (optional)
+- **Supabase**: For PostgreSQL database (managed cloud database)
 - **GitHub Actions**: For CI/CD pipeline
 
 ## Quick Setup
@@ -46,9 +46,9 @@ Add the following repository secrets:
 |-------------|-------------|---------|
 | `GCP_PROJECT_ID` | Your GCP Project ID | `my-tennis-app-123456` |
 | `GCP_SA_KEY` | Service account JSON key | `{"type": "service_account", ...}` |
-| `DB_HOST` | Database host | `/cloudsql/project:region:instance` or IP |
+| `DB_HOST` | Supabase database host | `db.xxxxxxxxxx.supabase.co` |
 | `DB_USER` | Database username | `postgres` |
-| `DB_PASSWORD` | Database password | `your-secure-password` |
+| `DB_PASSWORD` | Supabase database password | `your-supabase-password` |
 | `JWT_SECRET` | JWT signing secret | `your-super-secure-jwt-secret-32-chars+` |
 
 ### 3. Deploy
@@ -117,26 +117,31 @@ gcloud iam service-accounts keys create tennis-connect-sa-key.json \
     --iam-account=tennis-connect-github-actions@YOUR_PROJECT_ID.iam.gserviceaccount.com
 ```
 
-## Database Options
+## Database: Supabase (Current Setup)
 
-### Option 1: Cloud SQL (Recommended for Production)
+### ✅ Current: Supabase PostgreSQL
 
-```bash
-# Create Cloud SQL instance
-gcloud sql instances create tennis-connect-db \
-    --database-version=POSTGRES_15 \
-    --tier=db-f1-micro \
-    --region=us-central1 \
-    --root-password=YOUR_SECURE_PASSWORD
+The application now uses **Supabase** as the managed PostgreSQL database:
 
-# Create database
-gcloud sql databases create tennis_connect \
-    --instance=tennis-connect-db
-```
+**Benefits:**
+- ✅ **$0/month** with generous free tier (500MB database, 5GB bandwidth)
+- ✅ **Automatic backups** and point-in-time recovery
+- ✅ **Built-in authentication** and real-time features
+- ✅ **Web-based management** interface
+- ✅ **No maintenance** required
 
-### Option 2: External Database
+**Setup:**
+1. Create account at [Supabase.com](https://supabase.com)
+2. Create new project: `tennis-connect`
+3. Get connection details from Settings → Database
+4. Update GitHub secrets with Supabase credentials
 
-You can use any PostgreSQL database that's accessible from the internet. Update the connection settings in your GitHub secrets accordingly.
+### Alternative: Other External Databases
+
+You can also use:
+- **Neon**: Serverless PostgreSQL with autoscaling
+- **PlanetScale**: MySQL with branching (requires schema changes)
+- **Railway**: PostgreSQL hosting with simple pricing
 
 ## Local Testing
 
@@ -189,21 +194,25 @@ curl https://tennis-connect-backend-YOUR_PROJECT_ID.a.run.app/api/health
 
 ## Cost Optimization
 
-- **Cloud Run**: Pay only for requests and compute time
-- **Cloud SQL**: Use smallest instance size for development (`db-f1-micro`)
-- **Artifact Registry**: Minimal storage costs for Docker images
+- **Cloud Run**: Pay only for requests and compute time (~$0-5/month for small apps)
+- **Supabase**: Free tier covers most small to medium applications ($0/month)
+- **Artifact Registry**: Minimal storage costs for Docker images (~$1-2/month)
+
+**Total estimated cost: $1-7/month** (compared to $15-25/month with Cloud SQL)
 
 For production, consider:
 - Enabling Cloud Run autoscaling
-- Using reserved instances for Cloud SQL
-- Setting up monitoring and alerting
+- Monitoring Supabase usage limits
+- Setting up alerting for cost spikes
 
 ## Security Considerations
 
-1. **Database**: Always use SSL connections (`DB_SSLMODE=require`)
-2. **JWT Secret**: Use a strong, randomly generated secret
-3. **Service Account**: Use minimal required permissions
+1. **Database**: Supabase enforces SSL by default (`DB_SSLMODE=require`)
+2. **JWT Secret**: Use a strong, randomly generated secret (32+ characters)
+3. **Service Account**: Use minimal required permissions for GCP resources
 4. **Environment Variables**: Never commit secrets to git
+5. **Supabase**: Enable Row Level Security (RLS) policies for data protection
+6. **API Keys**: Use separate keys for development and production
 
 ## Next Steps
 

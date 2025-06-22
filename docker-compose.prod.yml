@@ -1,27 +1,5 @@
 services:
-  # PostgreSQL Database
-  db:
-    image: postgres:15-alpine
-    container_name: tennis-connect-db
-    environment:
-      POSTGRES_DB: tennis_connect
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./backend/migrations:/docker-entrypoint-initdb.d
-    ports:
-      - "5432:5432"
-    networks:
-      - tennis-connect-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Backend API
+  # Backend API (using Supabase database)
   backend:
     build:
       context: ./backend
@@ -29,20 +7,17 @@ services:
     container_name: tennis-connect-backend
     environment:
       - APP_ENV=production
-      - DB_HOST=db
+      - DB_HOST=${DB_HOST:-db.idxkilpwsbxuwgwowwfg.supabase.co}
       - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=${DB_PASSWORD:-postgres}
-      - DB_NAME=tennis_connect
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME:-postgres}
       - DB_SSLMODE=require
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRATION=30
       - PORT=8080
     ports:
       - "8080:8080"
-    depends_on:
-      db:
-        condition: service_healthy
     networks:
       - tennis-connect-network
     restart: unless-stopped
@@ -69,10 +44,6 @@ services:
     networks:
       - tennis-connect-network
     restart: unless-stopped
-
-volumes:
-  postgres_data:
-    driver: local
 
 networks:
   tennis-connect-network:

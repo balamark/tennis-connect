@@ -19,12 +19,13 @@ That's it! 🎾
 
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:8080  
-- **Database**: localhost:5432
+- **Database**: Supabase (Remote PostgreSQL)
 
 ## 📋 Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) and Docker Compose
-- That's it! No Node.js, Go, or PostgreSQL installation needed.
+- [Supabase Account](https://supabase.com) for database
+- That's it! No Node.js, Go, or PostgreSQL installation needed locally.
 
 ## 🛠️ Development Commands
 
@@ -57,10 +58,11 @@ make db-restore # Restore from latest backup
 - Hot reload during development
 - Optimized production builds
 
-### Database (PostgreSQL)
-- Persistent data storage
-- Automatic migrations
-- Pre-configured for development
+### Database (Supabase PostgreSQL)
+- Managed PostgreSQL database
+- Built-in authentication & real-time features
+- Automatic backups and scaling
+- Web-based database management interface
 
 ## 📁 Project Structure
 
@@ -88,7 +90,7 @@ Environment variables are automatically set for development. To customize:
 
 Key variables:
 - `JWT_SECRET` - Change in production!
-- `DB_*` - Database configuration  
+- `DB_*` - Supabase database connection details
 - `REACT_APP_API_URL` - Frontend API endpoint
 
 ## 🧪 Testing
@@ -158,21 +160,14 @@ docker-compose logs backend    # Specific service
 
 **Database issues:**
 ```bash
-# Connect to database
-docker-compose exec db psql -U postgres -d tennis_connect
+# Check backend logs for database connection errors
+docker-compose logs backend
 
-# Check if tables exist
-docker-compose exec db psql -U postgres -d tennis_connect -c "\dt"
+# Test database connection
+curl http://localhost:8080/api/health
 
-# Check users table (for login persistence)
-docker-compose exec db psql -U postgres -d tennis_connect -c "SELECT id, email, created_at FROM users;"
-
-# Check database connection
-docker-compose exec db pg_isready -U postgres
-
-# Reset database completely
-docker-compose down -v  # Remove volumes (deletes all data!)
-make start              # Start fresh
+# Check environment variables
+docker-compose exec backend env | grep DB_
 ```
 
 ## 📊 Monitoring
@@ -188,78 +183,76 @@ make logs
 docker stats
 ```
 
-## 🗄️ Database Troubleshooting
+## 🗄️ Database (Supabase) Troubleshooting
 
-### Check Database Status
+### Check Database Connection
 ```bash
-# Is database running?
-docker-compose exec db pg_isready -U postgres
+# Check if backend can connect to Supabase
+curl http://localhost:8080/api/health
 
-# Connect to database
-docker-compose exec db psql -U postgres -d tennis_connect
+# View backend connection logs
+docker-compose logs backend | grep -i "database\|supabase\|postgres"
+
+# Check environment variables
+docker-compose exec backend env | grep DB_
 ```
 
-### Inspect Database Schema
+### Manage Database via Supabase Dashboard
 ```bash
-# List all tables
-docker-compose exec db psql -U postgres -d tennis_connect -c "\dt"
+# Open your Supabase project dashboard at:
+# https://supabase.com/dashboard/projects
 
-# Describe users table structure
-docker-compose exec db psql -U postgres -d tennis_connect -c "\d users"
-
-# Check if migrations ran
-docker-compose exec db psql -U postgres -d tennis_connect -c "SELECT * FROM schema_migrations;"
+# Database management:
+# - Table Editor: View and edit data
+# - SQL Editor: Run custom queries  
+# - Database: Schema and migrations
+# - Logs: Connection and query logs
 ```
 
-### Check Data Persistence
-```bash
-# View all users (check login persistence)
-docker-compose exec db psql -U postgres -d tennis_connect -c "SELECT id, email, created_at FROM users LIMIT 10;"
-
-# Count total users
-docker-compose exec db psql -U postgres -d tennis_connect -c "SELECT COUNT(*) FROM users;"
-
-# Check recent activity
-docker-compose exec db psql -U postgres -d tennis_connect -c "SELECT * FROM users ORDER BY created_at DESC LIMIT 5;"
-```
+### Inspect Database Schema & Data
+1. **Go to**: [Supabase Dashboard](https://supabase.com/dashboard)
+2. **Select your project**: tennis-connect
+3. **Table Editor**: View and edit data directly
+4. **SQL Editor**: Run queries like:
+   ```sql
+   -- List all tables
+   SELECT tablename FROM pg_tables WHERE schemaname = 'public';
+   
+   -- Check users table
+   SELECT id, email, created_at FROM users LIMIT 10;
+   
+   -- Count total users
+   SELECT COUNT(*) FROM users;
+   ```
 
 ### Database Backup & Recovery
+- **Automatic Backups**: Supabase handles daily backups automatically
+- **Manual Backup**: Use Supabase Dashboard → Settings → Database → Backup
+- **Export Data**: Use Table Editor to export CSV/JSON
+- **Point-in-time Recovery**: Available in Supabase Pro plan
+
+### ⚠️ Database Management
+
+**✅ Safe operations:**
 ```bash
-# 🚨 ALWAYS backup before making changes!
-make db-backup
-
-# View backups
-ls -la backups/
-
-# Restore from backup (DANGEROUS - replaces all data!)
-make db-restore
-```
-
-### ⚠️ CRITICAL: Avoiding Data Loss
-
-**NEVER run these commands if you have important user data:**
-```bash
-# ❌ These commands DESTROY ALL USER DATA:
-docker-compose down -v          # Removes database volume
-make clean                      # Removes all Docker data  
-make reset                      # Completely resets everything
-docker volume rm tennis-connect_postgres_data
-```
-
-**✅ Safe restart commands:**
-```bash
-# Safe - preserves database
+# Restart application (preserves Supabase data)
 make stop && make start
 make restart
 docker-compose restart
 ```
 
+**⚠️ Data is stored in Supabase cloud:**
+- Local container restarts don't affect database
+- Data persists across deployments
+- Use Supabase Dashboard for data management
+
 ## 🎯 Development Tips
 
 - **Hot reload**: Code changes auto-refresh
-- **Database**: Data persists between restarts
-- **Ports**: Frontend (3000), Backend (8080), DB (5432)
+- **Database**: Supabase cloud database - data persists between restarts
+- **Ports**: Frontend (3000), Backend (8080)
 - **API docs**: http://localhost:8080/api/health
+- **Database UI**: Use Supabase Dashboard for data management
 
 ## 🤝 Contributing
 
