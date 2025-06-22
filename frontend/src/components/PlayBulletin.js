@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/config';
 import { useDemoMode } from '../contexts/DemoModeContext';
 import { getMockBulletins } from '../data/mockData';
+import Modal from './Modal';
 
 const PlayBulletin = () => {
   const { isDemoMode } = useDemoMode();
@@ -35,9 +36,28 @@ const PlayBulletin = () => {
     bulletinId: '',
     message: '',
   });
+  const [modal, setModal] = useState({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   const gameTypeOptions = ['Singles', 'Doubles', 'Either'];
   const skillLevels = ['2.0', '2.5', '3.0', '3.5', '4.0', '4.5', '5.0', '5.5+'];
+
+  const showModal = (type, title, message) => {
+    setModal({
+      isOpen: true,
+      type,
+      title,
+      message
+    });
+  };
+
+  const closeModal = () => {
+    setModal(prev => ({ ...prev, isOpen: false }));
+  };
 
   const fetchBulletins = useCallback(async () => {
     setLoading(true);
@@ -87,22 +107,15 @@ const PlayBulletin = () => {
       }
 
       const response = await api.get(`/bulletins?${queryParams}`);
-      if (response.data.bulletins && response.data.bulletins.length > 0) {
-        setBulletins(response.data.bulletins);
-        setShowingMockData(false);
-        setError(null);
-      } else {
-        setShowingMockData(true);
-        setError(null);
-        setBulletins(getMockBulletins());
-      }
+      setBulletins(response.data.bulletins || []);
+      setShowingMockData(false);
+      setError(null);
     } catch (err) {
       console.error('Error fetching bulletins:', err);
       setError('Failed to load bulletins. Please try again later.');
-      
-      // For development: use mock data if API call fails
-      setShowingMockData(true);
-      setBulletins(getMockBulletins());
+      // In live mode, don't show mock data on error - just show empty state
+      setBulletins([]);
+      setShowingMockData(false);
     } finally {
       setLoading(false);
     }
@@ -186,10 +199,10 @@ const PlayBulletin = () => {
       setShowForm(false);
       fetchBulletins();
       
-      alert('Your bulletin has been posted!');
+      showModal('success', 'Bulletin Posted', 'Your bulletin has been posted!');
     } catch (err) {
       console.error('Error creating bulletin:', err);
-      alert('Failed to create bulletin. Please try again.');
+      showModal('error', 'Error', 'Failed to create bulletin. Please try again.');
     }
   };
 
@@ -223,27 +236,32 @@ const PlayBulletin = () => {
       
       fetchBulletins();
       
-      alert('Your response has been sent!');
+      showModal('success', 'Response Sent', 'Your response has been sent!');
     } catch (err) {
       console.error('Error responding to bulletin:', err);
-      alert('Failed to respond. Please try again.');
+      showModal('error', 'Error', 'Failed to respond. Please try again.');
     }
   };
 
-  const handleDeleteBulletin = async (bulletinId) => {
-    if (window.confirm('Are you sure you want to delete this bulletin?')) {
-      try {
-        await api.delete(`/bulletins/${bulletinId}`);
-        
-        // Fetch updated bulletins
-        fetchBulletins();
-        
-        alert('Bulletin deleted successfully!');
-      } catch (err) {
-        console.error('Error deleting bulletin:', err);
-        alert('Failed to delete bulletin. Please try again.');
+  const handleDeleteBulletin = (bulletinId) => {
+    setModal({
+      isOpen: true,
+      type: 'warning',
+      title: 'Delete Bulletin',
+      message: 'Are you sure you want to delete this bulletin? This action cannot be undone.',
+      actionLabel: 'Delete',
+      cancelLabel: 'Cancel',
+      onAction: async () => {
+        try {
+          await api.delete(`/bulletins/${bulletinId}`);
+          fetchBulletins();
+          showModal('success', 'Bulletin Deleted', 'Bulletin deleted successfully!');
+        } catch (err) {
+          console.error('Error deleting bulletin:', err);
+          showModal('error', 'Error', 'Failed to delete bulletin. Please try again.');
+        }
       }
-    }
+    });
   };
 
   // Helper functions (removed unused formatDateTime)
@@ -260,8 +278,6 @@ const PlayBulletin = () => {
     
     return bulletin.userId === currentUserId;
   };
-
-
 
   if (loading) {
     return (
@@ -529,7 +545,7 @@ const PlayBulletin = () => {
                   
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <label htmlFor="bulletin-zipCode" className="block text-[#0d141c] text-sm font-medium mb-1">Zip Code</label>
+                      <label htmlFor="bulletin-zipCode" className="block text-[#0d141c] text-sm font-medium mb-1">Zip Code <span className="text-[#49739c] text-xs">(optional)</span></label>
                       <input
                         id="bulletin-zipCode"
                         type="text"
@@ -537,7 +553,6 @@ const PlayBulletin = () => {
                         value={newBulletin.location.zipCode}
                         onChange={handleNewBulletinChange}
                         placeholder="e.g., 94117"
-                        required
                         className="w-full p-3 border border-[#e7edf4] rounded-lg text-[#0d141c] focus:outline-none focus:ring-2 focus:ring-[#3d98f4] focus:border-transparent"
                       />
                     </div>
@@ -555,7 +570,7 @@ const PlayBulletin = () => {
                       />
                     </div>
                     <div>
-                      <label htmlFor="bulletin-state" className="block text-[#0d141c] text-sm font-medium mb-1">State</label>
+                      <label htmlFor="bulletin-state" className="block text-[#0d141c] text-sm font-medium mb-1">State <span className="text-[#49739c] text-xs">(optional)</span></label>
                       <input
                         id="bulletin-state"
                         type="text"
@@ -563,7 +578,6 @@ const PlayBulletin = () => {
                         value={newBulletin.location.state}
                         onChange={handleNewBulletinChange}
                         placeholder="e.g., CA"
-                        required
                         className="w-full p-3 border border-[#e7edf4] rounded-lg text-[#0d141c] focus:outline-none focus:ring-2 focus:ring-[#3d98f4] focus:border-transparent"
                       />
                     </div>
@@ -655,6 +669,16 @@ const PlayBulletin = () => {
           </div>
         </div>
       </div>
+              <Modal
+          isOpen={modal.isOpen}
+          type={modal.type}
+          title={modal.title}
+          message={modal.message}
+          actionLabel={modal.actionLabel}
+          cancelLabel={modal.cancelLabel}
+          onAction={modal.onAction}
+          onClose={closeModal}
+        />
     </div>
   );
 };

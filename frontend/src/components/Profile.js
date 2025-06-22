@@ -94,11 +94,6 @@ const Profile = () => {
     } catch (err) {
       console.error('Error fetching profile:', err);
       setError('Failed to load profile. Please try again later.');
-      
-      // For development: use mock data if API call fails
-      const mockProfile = getMockProfile();
-      setProfile(mockProfile);
-      setFormData(mockProfile);
     } finally {
       setLoading(false);
     }
@@ -244,31 +239,6 @@ const Profile = () => {
       setSubmitting(false);
     }
   };
-
-  // Mock data for development
-  const getMockProfile = () => ({
-    id: '1',
-    email: 'balamark@hotmail.com',
-    name: 'Mark Wang',
-    skillLevel: '3.5', // Keep as string for form compatibility
-    gameStyles: ['Singles', 'Doubles', 'Social'],
-    gender: 'Male',
-    isNewToArea: true,
-    isVerified: true,
-    bio: 'casual hit',
-    preferredTimes: [
-      { dayOfWeek: 'Monday', startTime: '18:00', endTime: '20:00' },
-      { dayOfWeek: 'Wednesday', startTime: '19:00', endTime: '21:00' },
-      { dayOfWeek: 'Saturday', startTime: '09:00', endTime: '12:00' }
-    ],
-    location: {
-      latitude: 36.1699,
-      longitude: -115.1398,
-      zipCode: '89101',
-      city: 'Las Vegas',
-      state: 'NV'
-    }
-  });
 
   if (loading) {
     return <div className="loading">Loading profile...</div>;

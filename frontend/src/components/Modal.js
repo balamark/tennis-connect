@@ -8,7 +8,9 @@ const Modal = ({
   message, 
   type = 'success', 
   actionLabel = 'OK',
-  onAction 
+  onAction,
+  cancelLabel,
+  onCancel 
 }) => {
   if (!isOpen) return null;
 
@@ -20,34 +22,45 @@ const Modal = ({
     }
   };
 
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    } else {
+      onClose();
+    }
+  };
+
   const getIcon = () => {
     switch (type) {
       case 'success':
         return (
           <div className="modal-icon success">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="9,11 12,14 22,4"></polyline>
-              <path d="M21,12v7a2,2 0 0,1 -2,2H5a2,2 0 0,1 -2,-2V5a2,2 0 0,1 2,-2h11"></path>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
             </svg>
           </div>
         );
       case 'error':
         return (
           <div className="modal-icon error">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="15" y1="9" x2="9" y2="15"></line>
-              <line x1="9" y1="9" x2="15" y2="15"></line>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
         );
       case 'info':
         return (
           <div className="modal-icon info">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="M12,16v-4"></path>
-              <path d="M12,8h.01"></path>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        );
+      case 'warning':
+        return (
+          <div className="modal-icon warning">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
         );
@@ -62,13 +75,6 @@ const Modal = ({
         className={`modal-container ${type}`} 
         onClick={(e) => e.stopPropagation()}
       >
-        <button className="modal-close" onClick={onClose}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-        
         <div className="modal-content">
           {getIcon()}
           
@@ -79,8 +85,16 @@ const Modal = ({
         </div>
         
         <div className="modal-actions">
+          {cancelLabel && (
+            <button 
+              className="modal-button secondary"
+              onClick={handleCancel}
+            >
+              {cancelLabel}
+            </button>
+          )}
           <button 
-            className={`modal-button ${type}`}
+            className={`modal-button primary ${type}`}
             onClick={handleAction}
           >
             {actionLabel}

@@ -123,6 +123,17 @@ func (h *BulletinHandler) CreateBulletin(c *gin.Context) {
 	bulletin.UserName = userName.(string)
 	bulletin.IsActive = true
 
+	// If latitude and longitude are not provided, set default values based on city
+	if bulletin.Location.Latitude == 0 && bulletin.Location.Longitude == 0 {
+		// Set default coordinates based on city or use a geocoding service
+		// For now, use San Francisco as default if no coordinates provided
+		bulletin.Location.Latitude = 37.7749
+		bulletin.Location.Longitude = -122.4194
+		
+		// In a production system, you would geocode the city/state/zipcode
+		// to get actual coordinates
+	}
+
 	// Save to database
 	ctx := context.Background()
 	err := h.bulletinRepo.Create(ctx, &bulletin)
