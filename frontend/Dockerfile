@@ -57,8 +57,7 @@ FROM nginx:alpine AS production
 # Copy build output from builder stage
 COPY --from=builder /app/build /usr/share/nginx/html
 
-# Copy nginx configuration (if you have one)
-COPY nginx.conf /etc/nginx/nginx.conf
+# Remove default nginx config to avoid conflicts
 
 # Copy startup script
 COPY start-nginx.sh /start-nginx.sh
