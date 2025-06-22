@@ -58,7 +58,10 @@ const NearbyPlayers = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const apiUrl = process.env.REACT_APP_API_URL || 
+        (process.env.NODE_ENV === 'production' 
+          ? 'https://tennis-connect-backend-552905514167.us-central1.run.app'
+          : 'http://localhost:8080');
       
       // Check if user is authenticated
       if (!token) {
@@ -87,13 +90,17 @@ const NearbyPlayers = () => {
         if (response.status === 401) {
           throw new Error('Your session has expired. Please log in again to view nearby players.');
         } else if (response.status === 404) {
-          throw new Error('No players found in your area. Try expanding your search radius or adjusting your filters.');
+          // For 404, try to fetch all users instead of showing error
+          console.log('No players found in radius, attempting to fetch all users...');
+          return await fetchAllUsers(token, apiUrl);
         } else if (response.status === 500) {
           throw new Error('Server error. Please try again later.');
         } else if (response.status >= 500) {
           throw new Error('Server is experiencing issues. Please try again later.');
         } else {
-          throw new Error(`Unable to load players. Please check your connection and try again.`);
+          // For other errors, try to fetch all users as fallback
+          console.log('API error, attempting to fetch all users as fallback...');
+          return await fetchAllUsers(token, apiUrl);
         }
       }
 
@@ -101,6 +108,13 @@ const NearbyPlayers = () => {
       
       // Handle the real API response
       const realPlayers = data.users || [];
+      
+      // If no players found in radius, try to get all users
+      if (realPlayers.length === 0) {
+        console.log('No players in radius, fetching all users...');
+        return await fetchAllUsers(token, apiUrl);
+      }
+      
       const metadata = data.metadata || {
         total_users: realPlayers.length,
         users_in_range: realPlayers.filter(p => p.distance <= filters.radius).length,
@@ -114,6 +128,21 @@ const NearbyPlayers = () => {
 
     } catch (err) {
       console.error('Error fetching nearby players:', err);
+             // Instead of showing error, try to fetch all users as final fallback
+       try {
+         const token = localStorage.getItem('token');
+         const apiUrl = process.env.REACT_APP_API_URL || 
+           (process.env.NODE_ENV === 'production' 
+             ? 'https://tennis-connect-backend-552905514167.us-central1.run.app'
+             : 'http://localhost:8080');
+        if (token) {
+          await fetchAllUsers(token, apiUrl);
+          return;
+        }
+      } catch (fallbackErr) {
+        console.error('Fallback also failed:', fallbackErr);
+      }
+      
       setError(err.message || 'Failed to load players. Please check your connection and try again.');
       setPlayers([]);
       setSearchMetadata({
@@ -127,6 +156,52 @@ const NearbyPlayers = () => {
       setLoading(false);
     }
   }, [filters]);
+
+  // New function to fetch all users as fallback
+  const fetchAllUsers = async (token, apiUrl) => {
+    try {
+      // Try to fetch all users without radius restriction
+      const allUsersResponse = await fetch(`${apiUrl}/api/users/nearby?radius=1000`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (allUsersResponse.ok) {
+        const allUsersData = await allUsersResponse.json();
+        const allUsers = allUsersData.users || [];
+        
+        if (allUsers.length > 0) {
+          // Apply client-side filtering for skills, gender, etc.
+          const filteredUsers = allUsers.filter(user => {
+            if (filters.skillLevel && user.skillLevel !== filters.skillLevel) return false;
+            if (filters.gender && user.gender !== filters.gender) return false;
+            if (filters.isNewcomer && !user.isNewToArea) return false;
+            // Add more filters as needed
+            return true;
+          });
+
+          const usersToShow = filteredUsers.length > 0 ? filteredUsers : allUsers;
+          
+          setPlayers(usersToShow);
+          setSearchMetadata({
+            total_users: usersToShow.length,
+            users_in_range: usersToShow.filter(p => p.distance && p.distance <= filters.radius).length,
+            users_out_of_range: usersToShow.filter(p => !p.distance || p.distance > filters.radius).length,
+            search_radius: filters.radius,
+            showing_fallback: true
+          });
+          return;
+        }
+      }
+      
+      throw new Error('No users found in database');
+    } catch (err) {
+      throw err;
+    }
+  };
 
   useEffect(() => {
     if (isDemoMode) {
@@ -591,85 +666,78 @@ const NearbyPlayers = () => {
             <p>Try adjusting your filters or expanding your search radius.</p>
           </div>
         ) : (
-          <div className={`players-list ${viewMode}`}>
-            {players.map(player => (
-              <div key={player.id} className="player-card">
-                {!isDemoMode && (
-                  <div className={`distance-badge ${player.distance <= filters.radius ? 'in-range' : 'out-of-range'}`}>
-                    {player.distance} mi
-                  </div>
-                )}
-                
-                <div className="player-photo">
-                  <div style={{
-                    width: '100%',
-                    height: '100%',
-                    background: `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '2rem',
-                    borderRadius: '50%'
-                  }}>
-                    {getAnimalAvatar(player.id, player.name)}
-                  </div>
-                  <div className="skill-badge">{player.skillLevel}</div>
-                </div>
-
-                <div className="player-info">
-                  <div className="player-header">
-                    <h3>{player.name}</h3>
-                  </div>
-
-                  <div className="player-badges">
-                    {player.isVerified && <span className="badge verified">✓ Verified</span>}
-                    {player.isNewToArea && <span className="badge newcomer">🆕 New to Area</span>}
-                  </div>
-
-                  <div className="player-details">
-                    <div className="detail-item">
-                      <strong>Location</strong>
-                      <span>{player.location.city}, {player.location.state}</span>
+          <div>
+            {searchMetadata?.showing_fallback && (
+              <div className="fallback-notice" style={{
+                background: '#e3f2fd',
+                border: '1px solid #2196f3',
+                borderRadius: '8px',
+                padding: '12px',
+                margin: '0 0 16px 0',
+                fontSize: '14px',
+                color: '#1976d2'
+              }}>
+                <strong>📍 Expanded Search:</strong> No players found within {searchMetadata.search_radius} miles. 
+                Showing all {searchMetadata.total_users} available players - some may be outside your preferred radius.
+              </div>
+            )}
+            
+            <div className={`players-list ${viewMode}`}>
+              {players.map(player => (
+                <div key={player.id} className="player-card">
+                  {!isDemoMode && (
+                    <div className={`distance-badge ${player.distance && player.distance <= filters.radius ? 'in-range' : 'out-of-range'}`}>
+                      {player.distance ? `${player.distance} mi` : 'Distance N/A'}
                     </div>
-                    <div className="detail-item">
-                      <strong>Game Styles</strong>
-                      <span>{player.gameStyles.join(', ')}</span>
-                    </div>
-                  </div>
-
-                  {viewMode === 'detailed' && (
-                    <>
-                      <div className="player-bio">
-                        <p>{player.bio}</p>
-                      </div>
-
-                      <div className="availability">
-                        <h4>Available Times</h4>
-                        <ul>
-                          {player.preferredTimes.map((time, index) => (
-                            <li key={index}>
-                              <span className="day">{time.dayOfWeek}</span>
-                              <span className="time">
-                                {formatTime(time.startTime)} - {formatTime(time.endTime)}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </>
                   )}
-
+                  
+                  <div className="player-photo">
+                    <div style={{
+                      width: '100%',
+                      height: '100%',
+                      background: `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '2rem',
+                      borderRadius: '50%'
+                    }}>
+                      {getAnimalAvatar(player.id, player.name)}
+                    </div>
+                    <div className="skill-badge">{player.skillLevel}</div>
+                  </div>
+                  
+                  <div className="player-info">
+                    <h3 className="player-name">{player.name}</h3>
+                    <div className="player-details">
+                      <span className="location">{player.location?.city || 'Location not specified'}</span>
+                      {!isDemoMode && player.distance && (
+                        <span className="distance">{player.distance} miles away</span>
+                      )}
+                      <span className="game-styles">
+                        {player.gameStyles?.join(', ') || 'Any style'}
+                      </span>
+                      {player.isNewToArea && (
+                        <span className="newcomer-badge">New to Area</span>
+                      )}
+                    </div>
+                    {player.bio && (
+                      <p className="player-bio">{player.bio}</p>
+                    )}
+                  </div>
+                  
                   <div className="player-actions">
                     <button 
-                      className={`like-button ${player.liked ? 'liked' : ''}`}
+                      className="like-button" 
                       onClick={() => handleLikePlayer(player.id)}
+                      disabled={!isDemoMode && !localStorage.getItem('token')}
                     >
-                      {player.liked ? '💚 Liked' : '👍 Like Player'}
+                      👍 Like
                     </button>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </div>

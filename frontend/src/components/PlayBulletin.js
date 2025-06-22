@@ -169,6 +169,13 @@ const PlayBulletin = () => {
   const handleCreateBulletin = async (e) => {
     e.preventDefault();
     
+    // Check if user is authenticated
+    const token = localStorage.getItem('token');
+    if (!token) {
+      showModal('error', 'Authentication Required', 'Please log in to create a bulletin. Click "Sign In" in the top menu.');
+      return;
+    }
+    
     try {
       // Format dates correctly for API
       const formattedBulletin = {
@@ -202,7 +209,18 @@ const PlayBulletin = () => {
       showModal('success', 'Bulletin Posted', 'Your bulletin has been posted!');
     } catch (err) {
       console.error('Error creating bulletin:', err);
-      showModal('error', 'Error', 'Failed to create bulletin. Please try again.');
+      
+      if (err.response?.status === 401) {
+        showModal('error', 'Authentication Required', 'Your session has expired. Please log in again to create a bulletin.');
+        // Clear invalid token
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      } else if (err.response?.status === 403) {
+        showModal('error', 'Access Denied', 'You do not have permission to create bulletins. Please ensure you are logged in.');
+      } else {
+        const errorMessage = err.response?.data?.error || 'Failed to create bulletin. Please try again.';
+        showModal('error', 'Error', errorMessage);
+      }
     }
   };
 
@@ -223,6 +241,13 @@ const PlayBulletin = () => {
   const handleSendResponse = async (e) => {
     e.preventDefault();
     
+    // Check if user is authenticated
+    const token = localStorage.getItem('token');
+    if (!token) {
+      showModal('error', 'Authentication Required', 'Please log in to respond to bulletins. Click "Sign In" in the top menu.');
+      return;
+    }
+    
     try {
       await api.post(`/bulletins/${responseForm.bulletinId}/respond`, {
         message: responseForm.message
@@ -239,7 +264,18 @@ const PlayBulletin = () => {
       showModal('success', 'Response Sent', 'Your response has been sent!');
     } catch (err) {
       console.error('Error responding to bulletin:', err);
-      showModal('error', 'Error', 'Failed to respond. Please try again.');
+      
+      if (err.response?.status === 401) {
+        showModal('error', 'Authentication Required', 'Your session has expired. Please log in again to respond to bulletins.');
+        // Clear invalid token
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      } else if (err.response?.status === 403) {
+        showModal('error', 'Access Denied', 'You do not have permission to respond to bulletins. Please ensure you are logged in.');
+      } else {
+        const errorMessage = err.response?.data?.error || 'Failed to respond. Please try again.';
+        showModal('error', 'Error', errorMessage);
+      }
     }
   };
 

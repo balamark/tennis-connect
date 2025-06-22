@@ -1,7 +1,10 @@
 import axios from 'axios';
 
 // Set up axios defaults
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 
+  (process.env.NODE_ENV === 'production' 
+    ? 'https://tennis-connect-backend-552905514167.us-central1.run.app/api'
+    : 'http://localhost:8080/api');
 
 // Create axios instance with base configuration
 const api = axios.create({
