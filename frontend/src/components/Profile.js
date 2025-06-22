@@ -18,6 +18,9 @@ const Profile = () => {
     message: ''
   });
   
+  // Submission loading state
+  const [submitting, setSubmitting] = useState(false);
+  
   const gameStyles = ['Singles', 'Doubles', 'Competitive', 'Social'];
   const skillLevels = ['2.0', '2.5', '3.0', '3.5', '4.0', '4.5', '5.0', '5.5+'];
   const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -162,24 +165,47 @@ const Profile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Check authentication first
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    if (!token || !user.id) {
+      setModalState({
+        isOpen: true,
+        type: 'error',
+        title: 'Authentication Required',
+        message: 'Please log in to update your profile.'
+      });
+      return;
+    }
+    
     try {
+      setSubmitting(true);
+      
       // Prepare data for API - convert to snake_case field names
       const submitData = {
-        ...formData,
+        name: formData.name,
+        bio: formData.bio || '',
         skill_level: parseFloat(formData.skillLevel),
-        game_styles: formData.gameStyles,
-        preferred_times: formData.preferredTimes.map(time => ({
+        game_styles: formData.gameStyles || [],
+        preferred_times: (formData.preferredTimes || []).map(time => ({
           day_of_week: time.dayOfWeek,
           start_time: time.startTime,
           end_time: time.endTime
         })),
-        is_new_to_area: formData.isNewToArea,
-        // Remove the camelCase versions to avoid confusion
-        skillLevel: undefined,
-        gameStyles: undefined,
-        preferredTimes: undefined,
-        isNewToArea: undefined
+        is_new_to_area: formData.isNewToArea || false,
+        gender: formData.gender || '',
+        location: {
+          latitude: formData.location?.latitude || 0,
+          longitude: formData.location?.longitude || 0,
+          zip_code: formData.location?.zipCode || '',
+          city: formData.location?.city || '',
+          state: formData.location?.state || ''
+        }
       };
+      
+      console.log('Submitting profile data:', submitData);
       
       await api.put('/users/profile', submitData);
       
@@ -196,13 +222,26 @@ const Profile = () => {
       });
     } catch (err) {
       console.error('Error updating profile:', err);
+      
+      let errorMessage = 'Failed to update profile. Please try again.';
+      
+      if (err.response?.status === 401) {
+        errorMessage = 'Your session has expired. Please log in again.';
+      } else if (err.response?.status === 400) {
+        errorMessage = 'Invalid profile data. Please check your inputs.';
+      } else if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      }
+      
       // Show error modal
       setModalState({
         isOpen: true,
         type: 'error',
         title: 'Update Failed',
-        message: 'Failed to update profile. Please try again.'
+        message: errorMessage
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -536,10 +575,17 @@ const Profile = () => {
             </div>
             
             <div className="form-actions">
-              <button type="submit" className="save-profile-button">Save Profile</button>
+              <button 
+                type="submit" 
+                className="save-profile-button"
+                disabled={submitting}
+              >
+                {submitting ? 'Saving...' : 'Save Profile'}
+              </button>
               <button 
                 type="button" 
                 className="cancel-button"
+                disabled={submitting}
                 onClick={() => {
                   setFormData(profile);
                   setEditing(false);
