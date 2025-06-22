@@ -1,0 +1,32 @@
+name: Ping Supabase to Prevent Pausing
+
+on:
+  schedule:
+    # Run every 12 hours to keep database active
+    - cron: '0 */12 * * *'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  ping-database:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Ping Supabase Database
+        env:
+          BACKEND_URL: https://tennis-connect-backend-552905514167.us-central1.run.app
+        run: |
+          echo "Pinging Supabase database via backend health check..."
+          
+          response=$(curl -s -w "%{http_code}" -o /tmp/response.json "$BACKEND_URL/api/health")
+          
+          if [ "$response" = "200" ]; then
+            echo "✅ Database ping successful!"
+            echo "Response:"
+            cat /tmp/response.json | jq .
+          else
+            echo "❌ Database ping failed with status: $response"
+            cat /tmp/response.json
+            exit 1
+          fi
+          
+          echo "Database kept active at $(date)" 
