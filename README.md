@@ -19,12 +19,12 @@ That's it! 🎾
 
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:8080  
-- **Database**: Supabase (Remote PostgreSQL)
+- **Database**: Local PostgreSQL (Development) / Supabase (Production)
 
 ## 📋 Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) and Docker Compose
-- [Supabase Account](https://supabase.com) for database
+- [Supabase Account](https://supabase.com) for production database (optional for development)
 - That's it! No Node.js, Go, or PostgreSQL installation needed locally.
 
 ## 🛠️ Development Commands
@@ -58,11 +58,17 @@ make db-restore # Restore from latest backup
 - Hot reload during development
 - Optimized production builds
 
-### Database (Supabase PostgreSQL)
-- Managed PostgreSQL database
+### Database
+**Development**: Local PostgreSQL in Docker
+- Instant setup with migrations
+- Works offline
+- Full control and fast iteration
+
+**Production**: Supabase PostgreSQL
+- Managed cloud database
 - Built-in authentication & real-time features
 - Automatic backups and scaling
-- Web-based database management interface
+- Web-based management interface
 
 ## 📁 Project Structure
 
@@ -160,14 +166,17 @@ docker-compose logs backend    # Specific service
 
 **Database issues:**
 ```bash
+# Check if database is running
+docker-compose exec db pg_isready -U postgres
+
+# Connect to database
+make db
+
 # Check backend logs for database connection errors
 docker-compose logs backend
 
 # Test database connection
 curl http://localhost:8080/api/health
-
-# Check environment variables
-docker-compose exec backend env | grep DB_
 ```
 
 ## 📊 Monitoring
@@ -183,76 +192,75 @@ make logs
 docker stats
 ```
 
-## 🗄️ Database (Supabase) Troubleshooting
+## 🗄️ Database Troubleshooting
 
-### Check Database Connection
+### Local Development Database
 ```bash
-# Check if backend can connect to Supabase
-curl http://localhost:8080/api/health
+# Check if database is running
+docker-compose exec db pg_isready -U postgres
 
-# View backend connection logs
-docker-compose logs backend | grep -i "database\|supabase\|postgres"
+# Connect to database
+make db
 
-# Check environment variables
-docker-compose exec backend env | grep DB_
+# Check database status and user count
+make db-status
+
+# View all tables
+docker-compose exec db psql -U postgres -d tennis_connect -c "\dt"
+
+# Check users table
+docker-compose exec db psql -U postgres -d tennis_connect -c "SELECT id, email, created_at FROM users LIMIT 10;"
 ```
 
-### Manage Database via Supabase Dashboard
+### Database Backup & Recovery (Local)
 ```bash
-# Open your Supabase project dashboard at:
-# https://supabase.com/dashboard/projects
+# Create backup
+make db-backup
 
-# Database management:
+# View backups
+ls -la backups/
+
+# Restore from backup (DANGEROUS - replaces all data!)
+make db-restore
+```
+
+### Production Database (Supabase)
+```bash
+# Open Supabase dashboard for production data
+make db-supabase
+
+# Production database management via web interface:
 # - Table Editor: View and edit data
 # - SQL Editor: Run custom queries  
 # - Database: Schema and migrations
 # - Logs: Connection and query logs
 ```
 
-### Inspect Database Schema & Data
-1. **Go to**: [Supabase Dashboard](https://supabase.com/dashboard)
-2. **Select your project**: tennis-connect
-3. **Table Editor**: View and edit data directly
-4. **SQL Editor**: Run queries like:
-   ```sql
-   -- List all tables
-   SELECT tablename FROM pg_tables WHERE schemaname = 'public';
-   
-   -- Check users table
-   SELECT id, email, created_at FROM users LIMIT 10;
-   
-   -- Count total users
-   SELECT COUNT(*) FROM users;
-   ```
-
-### Database Backup & Recovery
-- **Automatic Backups**: Supabase handles daily backups automatically
-- **Manual Backup**: Use Supabase Dashboard → Settings → Database → Backup
-- **Export Data**: Use Table Editor to export CSV/JSON
-- **Point-in-time Recovery**: Available in Supabase Pro plan
-
 ### ⚠️ Database Management
 
 **✅ Safe operations:**
 ```bash
-# Restart application (preserves Supabase data)
+# Safe - preserves local database
 make stop && make start
 make restart
 docker-compose restart
 ```
 
-**⚠️ Data is stored in Supabase cloud:**
-- Local container restarts don't affect database
-- Data persists across deployments
-- Use Supabase Dashboard for data management
+**❌ DANGEROUS - destroys local data:**
+```bash
+# These commands DELETE ALL LOCAL DATA:
+docker-compose down -v          # Removes database volume
+make clean                      # Removes all Docker data  
+make reset                      # Completely resets everything
+```
 
 ## 🎯 Development Tips
 
 - **Hot reload**: Code changes auto-refresh
-- **Database**: Supabase cloud database - data persists between restarts
-- **Ports**: Frontend (3000), Backend (8080)
+- **Database**: Local PostgreSQL - data persists between restarts
+- **Ports**: Frontend (3000), Backend (8080), Database (5432)
 - **API docs**: http://localhost:8080/api/health
-- **Database UI**: Use Supabase Dashboard for data management
+- **Database**: Connect with `make db` or any PostgreSQL client
 
 ## 🤝 Contributing
 
