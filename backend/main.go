@@ -119,7 +119,7 @@ func main() {
 	if cfg.IsProduction() {
 		// Add production frontend URLs here
 		allowedOrigins = append(allowedOrigins, 
-			"https://tennis-connect-frontend-*.run.app",
+			"https://tennis-connect-frontend-552905514167.us-central1.run.app",
 			"https://*.appspot.com",
 		)
 	}
