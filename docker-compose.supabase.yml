@@ -1,0 +1,56 @@
+services:
+  # Backend API (connected to Supabase)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: tennis-connect-backend-supabase
+    environment:
+      - APP_ENV=production
+      - DB_HOST=db.idxkilpwsbxuwgwowwfg.supabase.co
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=sNDA?VjXK7$$3Vhy
+      - DB_NAME=postgres
+      - DB_SSLMODE=require
+      - JWT_SECRET=PyZjfQH2Crf/b1X7Cxao01Vvycdd7mtOO41Yk18zn3GnYYbQ2uG5KccyvD6sJhh6DjT4nKxmftbf7lUIppiIRQ==
+      - JWT_EXPIRATION=30
+      - SERVER_PORT=8080
+    ports:
+      - "8080:8080"
+    networks:
+      - tennis-connect-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+      args:
+        - REACT_APP_API_URL=http://localhost:8080/api
+        - REACT_APP_ENV=development
+    container_name: tennis-connect-frontend-supabase
+    environment:
+      - BROWSER=none
+      - CHOKIDAR_USEPOLLING=true
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - tennis-connect-network
+    restart: unless-stopped
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+
+networks:
+  tennis-connect-network:
+    driver: bridge 
