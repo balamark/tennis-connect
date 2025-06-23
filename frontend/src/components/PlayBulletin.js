@@ -14,8 +14,9 @@ const PlayBulletin = () => {
   const [filters, setFilters] = useState({
     skillLevel: '',
     gameType: '',
-    startAfter: '',
+    startAfter: new Date().toISOString().slice(0, 16), // Default to today
   });
+  const [searchRadius, setSearchRadius] = useState(25); // Default 25 miles
   const [showForm, setShowForm] = useState(false);
   const [newBulletin, setNewBulletin] = useState({
     title: '',
@@ -97,17 +98,32 @@ const PlayBulletin = () => {
         const position = await getCurrentPosition();
         queryParams.append('latitude', position.coords.latitude);
         queryParams.append('longitude', position.coords.longitude);
-        queryParams.append('radius', '25'); // 25 miles radius
+        if (searchRadius < 999) {
+          queryParams.append('radius', searchRadius.toString());
+        }
+        // If searchRadius is 999 (All Distances), don't send radius parameter
       } catch (error) {
         console.warn("Couldn't get location, using default San Francisco location");
         // Default to San Francisco coordinates
         queryParams.append('latitude', '37.7749');
         queryParams.append('longitude', '-122.4194');
-        queryParams.append('radius', '25');
+        if (searchRadius < 999) {
+          queryParams.append('radius', searchRadius.toString());
+        }
+        // If searchRadius is 999 (All Distances), don't send radius parameter
       }
 
       const response = await api.get(`/bulletins?${queryParams}`);
-      setBulletins(response.data.bulletins || []);
+      let bulletins = response.data.bulletins || [];
+      
+      // In live mode, filter out seed/demo data (has specific UUID patterns)
+      if (!isDemoMode) {
+        bulletins = bulletins.filter(bulletin => 
+          !bulletin.id.startsWith('550e8400-e29b-41d4-a716-44665544') // Filter out seed data
+        );
+      }
+      
+      setBulletins(bulletins);
       setShowingMockData(false);
       setError(null);
     } catch (err) {
@@ -119,7 +135,7 @@ const PlayBulletin = () => {
     } finally {
       setLoading(false);
     }
-  }, [isDemoMode, filters.skillLevel, filters.gameType, filters.startAfter, showExpired]);
+  }, [isDemoMode, filters.skillLevel, filters.gameType, filters.startAfter, showExpired, searchRadius]);
 
   useEffect(() => {
     fetchBulletins();
@@ -149,6 +165,16 @@ const PlayBulletin = () => {
     fetchBulletins();
   };
 
+  const handleRadiusChange = (e) => {
+    const value = parseInt(e.target.value);
+    // Snap to 999 (All Distances) when slider gets close to the end
+    if (value >= 95) {
+      setSearchRadius(999);
+    } else {
+      setSearchRadius(value);
+    }
+  };
+
   const handleNewBulletinChange = (e) => {
     const { name, value } = e.target;
     
@@ -172,16 +198,27 @@ const PlayBulletin = () => {
     // Check if user is authenticated
     const token = localStorage.getItem('token');
     if (!token) {
-      showModal('error', 'Authentication Required', 'Please log in to create a bulletin. Click "Sign In" in the top menu.');
+      showModal('error', 'Please Sign In', 'You need to be signed in to create a bulletin. Click "Sign In" in the top menu.');
       return;
     }
     
     try {
       // Format dates correctly for API
       const formattedBulletin = {
-        ...newBulletin,
-        startTime: new Date(newBulletin.startTime).toISOString(),
-        endTime: new Date(newBulletin.endTime).toISOString(),
+        title: newBulletin.title,
+        description: newBulletin.description,
+        location: {
+          zip_code: newBulletin.location.zipCode,
+          city: newBulletin.location.city,
+          state: newBulletin.location.state,
+          latitude: 0, // Will be set by backend default
+          longitude: 0, // Will be set by backend default
+        },
+        court_id: newBulletin.courtId || null,
+        start_time: new Date(newBulletin.startTime).toISOString(),
+        end_time: new Date(newBulletin.endTime).toISOString(),
+        skill_level: newBulletin.skillLevel,
+        game_type: newBulletin.gameType,
       };
       
       await api.post('/bulletins', formattedBulletin);
@@ -204,22 +241,100 @@ const PlayBulletin = () => {
       });
       
       setShowForm(false);
-      fetchBulletins();
+      
+      // Temporarily expand search radius to ensure user sees their new bulletin
+      const expandedRadius = searchRadius === 999 ? 999 : Math.max(searchRadius * 2, 50); // Keep all distances or double current radius
+      
+      // Fetch bulletins with expanded radius to show the newly created bulletin
+      try {
+        let queryParams = new URLSearchParams();
+        
+        if (filters.skillLevel) {
+          queryParams.append('skill_level', filters.skillLevel);
+        }
+        if (filters.gameType) {
+          queryParams.append('game_type', filters.gameType);
+        }
+        if (filters.startAfter) {
+          const startAfterDate = new Date(filters.startAfter);
+          queryParams.append('start_after', startAfterDate.toISOString());
+        }
+        if (showExpired) {
+          queryParams.append('show_expired', 'true');
+        }
+        
+                 // Use expanded radius to ensure newly created bulletin appears
+         try {
+           const position = await getCurrentPosition();
+           queryParams.append('latitude', position.coords.latitude);
+           queryParams.append('longitude', position.coords.longitude);
+           if (expandedRadius < 999) {
+             queryParams.append('radius', expandedRadius);
+           }
+         } catch (error) {
+           console.warn("Couldn't get location, using default San Francisco location");
+           queryParams.append('latitude', '37.7749');
+           queryParams.append('longitude', '-122.4194');
+           if (expandedRadius < 999) {
+             queryParams.append('radius', expandedRadius);
+           }
+         }
+        
+        const response = await api.get(`/bulletins?${queryParams}`);
+        let bulletins = response.data.bulletins || [];
+        
+        // In live mode, filter out seed/demo data
+        if (!isDemoMode) {
+          bulletins = bulletins.filter(bulletin => 
+            !bulletin.id.startsWith('550e8400-e29b-41d4-a716-44665544')
+          );
+        }
+        
+        setBulletins(bulletins);
+        setShowingMockData(false);
+        setError(null);
+        
+        // After a short delay, revert to normal radius
+        setTimeout(() => {
+          fetchBulletins();
+        }, 2000);
+        
+      } catch (fetchError) {
+        console.error('Error fetching bulletins after creation:', fetchError);
+        // Fall back to normal fetch
+        fetchBulletins();
+      }
       
       showModal('success', 'Bulletin Posted', 'Your bulletin has been posted!');
     } catch (err) {
       console.error('Error creating bulletin:', err);
       
       if (err.response?.status === 401) {
-        showModal('error', 'Authentication Required', 'Your session has expired. Please log in again to create a bulletin.');
+        showModal('error', 'Session Expired', 'Your login session has expired. Please sign in again to create a bulletin.');
         // Clear invalid token
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       } else if (err.response?.status === 403) {
-        showModal('error', 'Access Denied', 'You do not have permission to create bulletins. Please ensure you are logged in.');
+        showModal('error', 'Permission Denied', 'You do not have permission to create bulletins. Please ensure you are logged in.');
       } else {
-        const errorMessage = err.response?.data?.error || 'Failed to create bulletin. Please try again.';
-        showModal('error', 'Error', errorMessage);
+        const errorMessage = err.response?.data?.error || err.message || 'Failed to create bulletin. Please try again.';
+        setModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Unable to Create Bulletin',
+          message: errorMessage,
+          retryLabel: 'Try Again',
+          cancelLabel: 'Cancel',
+          onRetry: () => {
+            setModal({ isOpen: false });
+            // Retry the bulletin creation
+            const form = document.querySelector('form');
+            if (form) {
+              handleCreateBulletin({ preventDefault: () => {} });
+            }
+          },
+          onCancel: () => setModal({ isOpen: false })
+        });
       }
     }
   };
@@ -244,7 +359,7 @@ const PlayBulletin = () => {
     // Check if user is authenticated
     const token = localStorage.getItem('token');
     if (!token) {
-      showModal('error', 'Authentication Required', 'Please log in to respond to bulletins. Click "Sign In" in the top menu.');
+      showModal('error', 'Please Sign In', 'You need to be signed in to respond to bulletins. Click "Sign In" in the top menu.');
       return;
     }
     
@@ -266,15 +381,28 @@ const PlayBulletin = () => {
       console.error('Error responding to bulletin:', err);
       
       if (err.response?.status === 401) {
-        showModal('error', 'Authentication Required', 'Your session has expired. Please log in again to respond to bulletins.');
+        showModal('error', 'Session Expired', 'Your login session has expired. Please sign in again to respond to bulletins.');
         // Clear invalid token
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       } else if (err.response?.status === 403) {
-        showModal('error', 'Access Denied', 'You do not have permission to respond to bulletins. Please ensure you are logged in.');
+        showModal('error', 'Permission Denied', 'You do not have permission to respond to bulletins. Please ensure you are logged in.');
       } else {
-        const errorMessage = err.response?.data?.error || 'Failed to respond. Please try again.';
-        showModal('error', 'Error', errorMessage);
+        const errorMessage = err.response?.data?.error || err.message || 'Failed to respond. Please try again.';
+        setModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Unable to Send Response',
+          message: errorMessage,
+          retryLabel: 'Try Again',
+          cancelLabel: 'Cancel',
+          onRetry: () => {
+            setModal({ isOpen: false });
+            // Retry the response sending
+            handleSendResponse({ preventDefault: () => {} });
+          },
+          onCancel: () => setModal({ isOpen: false })
+        });
       }
     }
   };
@@ -294,25 +422,80 @@ const PlayBulletin = () => {
           showModal('success', 'Bulletin Deleted', 'Bulletin deleted successfully!');
         } catch (err) {
           console.error('Error deleting bulletin:', err);
-          showModal('error', 'Error', 'Failed to delete bulletin. Please try again.');
+          const errorMessage = err.response?.data?.error || err.message || 'Failed to delete bulletin. Please try again.';
+          setModal({
+            isOpen: true,
+            type: 'error',
+            title: 'Unable to Delete Bulletin',
+            message: errorMessage,
+            retryLabel: 'Try Again',
+            cancelLabel: 'Cancel',
+            onRetry: () => {
+              setModal({ isOpen: false });
+              handleDeleteBulletin(bulletinId); // Retry the same operation
+            },
+            onCancel: () => setModal({ isOpen: false })
+          });
         }
       }
     });
   };
 
-  // Helper functions (removed unused formatDateTime)
+  // Helper functions
+  const getTennisImage = (bulletinId, gameType, courtName) => {
+    // Court-specific images
+    const courtImages = {
+      'Golden Gate Park': "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop", // Park tennis courts
+      'Mission Bay': "https://images.unsplash.com/photo-1544966503-7e33b7f9e23d?w=400&h=300&fit=crop", // Modern tennis facility
+      'Presidio': "https://images.unsplash.com/photo-1585518419759-7fe2e0fbf8a6?w=400&h=300&fit=crop", // Professional courts
+    };
+
+    // Game type specific images
+    const gameTypeImages = {
+      'Doubles': "https://images.unsplash.com/photo-1561043433-aaf687c4cf04?w=400&h=300&fit=crop", // Doubles court
+      'Singles': "https://images.unsplash.com/photo-1552072805-b3f9e9a8e1a8?w=400&h=300&fit=crop", // Singles action
+    };
+
+    // General tennis images for variety
+    const generalImages = [
+      "https://images.unsplash.com/photo-1554284126-aa88f22d8b74?w=400&h=300&fit=crop", // Tennis court aerial
+      "https://images.unsplash.com/photo-1569935228399-d38b31844ad9?w=400&h=300&fit=crop", // Tennis ball and racket
+      "https://images.unsplash.com/photo-1494622526613-9fc2b16e8b3e?w=400&h=300&fit=crop", // Tennis racket close-up
+      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=300&fit=crop", // Tennis court with shadows
+      "https://images.unsplash.com/photo-1490653651676-c91b6c8e2bab?w=400&h=300&fit=crop", // Tennis net view
+      "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400&h=300&fit=crop", // Tennis balls
+    ];
+
+    // Check for court-specific image first
+    if (courtName) {
+      for (const [courtKey, image] of Object.entries(courtImages)) {
+        if (courtName.toLowerCase().includes(courtKey.toLowerCase())) {
+          return image;
+        }
+      }
+    }
+
+    // Then check game type
+    if (gameType && gameTypeImages[gameType]) {
+      return gameTypeImages[gameType];
+    }
+
+    // Fall back to general tennis images based on bulletin ID
+    const imageIndex = parseInt(bulletinId.slice(-1), 16) % generalImages.length;
+    return generalImages[imageIndex];
+  };
 
   const isUserBulletin = (bulletin) => {
     // Check if the bulletin belongs to the current user
     const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
     const currentUserId = currentUser.id;
     
-    // If no current user or no bulletin userId, return false
-    if (!currentUserId || !bulletin.userId) {
+    // If no current user or no bulletin user_id, return false
+    if (!currentUserId || !bulletin.user_id) {
       return false;
     }
     
-    return bulletin.userId === currentUserId;
+    return bulletin.user_id === currentUserId;
   };
 
   if (loading) {
@@ -334,7 +517,7 @@ const PlayBulletin = () => {
                 <p className="text-[#49739c] text-sm font-normal leading-normal">Find a match partner or respond to requests from other players. 🎾</p>
                 
                 {/* Mock data / Error indicator */}
-                {(showingMockData || error) && (
+                {(showingMockData || (error && !showingMockData)) && (
                   <div className={`rounded-lg p-3 mt-2 ${error && !showingMockData ? 'bg-red-50 border border-red-200' : 'bg-blue-50 border border-blue-200'}`}>
                     <div className="flex items-center gap-2">
                       {(error && !showingMockData) ? (
@@ -353,7 +536,7 @@ const PlayBulletin = () => {
                     <p className={`${error && !showingMockData ? 'text-red-600' : 'text-blue-600'} text-xs mt-1`}>
                       {error ? 
                         (showingMockData ? 'Unable to connect to server. Showing sample bulletins to demonstrate the feature.' : error) :
-                        'No bulletins found in your area. Showing sample bulletins to demonstrate the feature.'
+                        'You\'re viewing sample bulletins. Toggle demo mode off to see real bulletins.'
                       }
                     </p>
                   </div>
@@ -405,6 +588,25 @@ const PlayBulletin = () => {
                   placeholder="Available After"
                 />
               </div>
+              {/* Search Radius Slider */}
+              <div className="flex items-center gap-x-2 rounded-xl bg-[#e7edf4] pl-4 pr-4 py-1" title={searchRadius === 999 ? 'Search all bulletins regardless of distance' : `Search within ${searchRadius} miles of your location`}>
+                <label htmlFor="search-radius" className="text-[#0d141c] text-sm font-medium leading-normal whitespace-nowrap">
+                  {searchRadius === 999 ? 'All Distances' : `Radius: ${searchRadius} mi`}
+                </label>
+                <input
+                  id="search-radius"
+                  type="range"
+                  min="5"
+                  max="999"
+                  step="5"
+                  value={searchRadius}
+                  onChange={handleRadiusChange}
+                  className="w-20 h-2 bg-[#c4d5e6] rounded-lg appearance-none cursor-pointer"
+                  style={{
+                    background: `linear-gradient(to right, #3d98f4 0%, #3d98f4 ${(searchRadius - 5) / 994 * 100}%, #c4d5e6 ${(searchRadius - 5) / 994 * 100}%, #c4d5e6 100%)`
+                  }}
+                />
+              </div>
               <button 
                 onClick={handleApplyFilters}
                 className="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-xl bg-[#3d98f4] text-white pl-4 pr-4 hover:bg-[#2d88e4] transition-colors"
@@ -413,30 +615,40 @@ const PlayBulletin = () => {
               </button>
             </div>
 
-            <h2 className="text-[#0d141c] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Available Matches</h2>
+            <div className="flex justify-between items-center px-4 pb-3 pt-5">
+              <h2 className="text-[#0d141c] text-[22px] font-bold leading-tight tracking-[-0.015em]">Available Matches</h2>
+              {!isDemoMode && !loading && (
+                <span className="text-[#49739c] text-sm">
+                  {bulletins.length} bulletin{bulletins.length !== 1 ? 's' : ''} {searchRadius === 999 ? 'found' : `within ${searchRadius} miles`}
+                </span>
+              )}
+            </div>
             
             {/* Bulletins List */}
             <div className="space-y-4 px-4">
               {bulletins.length === 0 ? (
                 <div className="text-center py-8 text-[#49739c]">
-                  No bulletins found matching your criteria. Create one to get started!
+                  {isDemoMode ? 
+                    'No bulletins found matching your criteria. Create one to get started!' :
+                    `No bulletins found ${searchRadius === 999 ? '' : `within ${searchRadius} miles `}matching your criteria. ${searchRadius === 999 ? 'Create one to get started!' : 'Try increasing the search radius or create one to get started!'}`
+                  }
                 </div>
               ) : (
                 bulletins.map(bulletin => (
                   <div key={bulletin.id} className="p-4">
                     <div className="flex items-stretch justify-between gap-4 rounded-xl">
                       <div className="flex flex-col gap-1 flex-[2_2_0px]">
-                        <p className="text-[#49739c] text-sm font-normal leading-normal">Posted by {bulletin.userName}</p>
+                        <p className="text-[#49739c] text-sm font-normal leading-normal">Posted by {bulletin.user_name}</p>
                         <p className="text-[#0d141c] text-base font-bold leading-tight">{bulletin.title}</p>
                         <p className="text-[#49739c] text-sm font-normal leading-normal">
-                          Date: {new Date(bulletin.startTime).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} | 
-                          Time: {new Date(bulletin.startTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} | 
-                          Location: {bulletin.courtName} | 
-                          Skill Level: {bulletin.skillLevel}
+                          Date: {new Date(bulletin.start_time).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} | 
+                          Time: {new Date(bulletin.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} | 
+                          Location: {bulletin.court_name || bulletin.location?.city || 'Not specified'} | 
+                          Skill Level: {bulletin.skill_level || 'Not specified'}
                         </p>
                         
-                        {/* Response form */}
-                        {bulletin.isActive && !isUserBulletin(bulletin) && (
+                        {/* Response form for other users' bulletins */}
+                        {bulletin.is_active && !isUserBulletin(bulletin) && (
                           <div className="mt-3">
                             {responseForm.bulletinId === bulletin.id ? (
                               <form onSubmit={handleSendResponse} className="space-y-2">
@@ -475,6 +687,15 @@ const PlayBulletin = () => {
                           </div>
                         )}
 
+                        {/* Status indicator for user's own bulletins */}
+                        {bulletin.is_active && isUserBulletin(bulletin) && (
+                          <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-lg">
+                            <p className="text-green-700 text-sm font-medium">
+                              📝 This is your bulletin - Others can respond to you
+                            </p>
+                          </div>
+                        )}
+
                         {/* User's bulletin responses */}
                         {isUserBulletin(bulletin) && bulletin.responses && bulletin.responses.length > 0 && (
                           <div className="mt-3 space-y-2">
@@ -482,7 +703,7 @@ const PlayBulletin = () => {
                             {bulletin.responses.map(response => (
                               <div key={response.id} className="bg-[#f8f9fa] p-3 rounded-lg">
                                 <div className="flex justify-between items-start mb-1">
-                                  <span className="text-[#0d141c] font-medium text-sm">{response.userName}</span>
+                                  <span className="text-[#0d141c] font-medium text-sm">{response.user_name || response.userName}</span>
                                   <span className="text-[#49739c] text-xs">
                                     {new Date(response.createdAt).toLocaleString()}
                                   </span>
@@ -528,7 +749,7 @@ const PlayBulletin = () => {
                       </div>
                       <div
                         className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-xl flex-1"
-                        style={{backgroundImage: `url("https://images.unsplash.com/photo-1554284126-aa88f22d8b74?w=400&h=300&fit=crop")`}}
+                        style={{backgroundImage: `url("${getTennisImage(bulletin.id, bulletin.game_type, bulletin.court_name)}")`}}
                       ></div>
                     </div>
                   </div>

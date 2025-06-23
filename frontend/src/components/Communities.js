@@ -1,7 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import ComingSoon from './ComingSoon';
-import axios from 'axios';
-import useFetch from '../hooks/useFetch';
 import './Communities.css';
 
 const Communities = () => {

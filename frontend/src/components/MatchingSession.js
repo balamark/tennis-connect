@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { bookingApi } from '../api/bookingApi';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const MatchingSession = ({ booking, onJoinSession, onCreateSession }) => {
   const [matchingSessions, setMatchingSessions] = useState([]);
@@ -18,9 +17,9 @@ const MatchingSession = ({ booking, onJoinSession, onCreateSession }) => {
     if (booking) {
       loadMatchingSessions();
     }
-  }, [booking]);
+  }, [booking, loadMatchingSessions]);
 
-  const loadMatchingSessions = async () => {
+  const loadMatchingSessions = useCallback(async () => {
     try {
       setLoading(true);
       // This would be an API call to get matching sessions for the booking
@@ -83,7 +82,7 @@ const MatchingSession = ({ booking, onJoinSession, onCreateSession }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [booking]);
 
   const handleJoinSession = async (sessionId) => {
     try {

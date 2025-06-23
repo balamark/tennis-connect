@@ -38,12 +38,12 @@ func (r *EventRepository) Create(ctx context.Context, event *models.Event) error
 
 	_, err = tx.ExecContext(ctx, `
 		INSERT INTO events (
-			id, title, description, court_id, court_name, latitude, longitude, zip_code, city, state,
+			id, title, description, court_id, latitude, longitude, zip_code, city, state,
 			start_time, end_time, host_id, max_players, skill_level, event_type, is_recurring,
 			is_newcomer_friendly, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
 	`,
-		event.ID, event.Title, event.Description, event.CourtID, event.CourtName,
+		event.ID, event.Title, event.Description, event.CourtID,
 		event.Location.Latitude, event.Location.Longitude, event.Location.ZipCode, event.Location.City, event.Location.State,
 		event.StartTime, event.EndTime, event.HostID, event.MaxPlayers, event.SkillLevel, event.EventType, event.IsRecurring,
 		event.IsNewcomerFriendly, event.CreatedAt, event.UpdatedAt,
@@ -63,12 +63,12 @@ func (r *EventRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Ev
 	event := &models.Event{ID: id}
 	err := r.db.QueryRowContext(ctx, `
 		SELECT 
-			title, description, court_id, court_name, latitude, longitude, zip_code, city, state,
+			title, description, court_id, latitude, longitude, zip_code, city, state,
 			start_time, end_time, host_id, max_players, skill_level, event_type, is_recurring,
 			is_newcomer_friendly, created_at, updated_at
 		FROM events WHERE id = $1
 	`, id).Scan(
-		&event.Title, &event.Description, &event.CourtID, &event.CourtName,
+		&event.Title, &event.Description, &event.CourtID,
 		&event.Location.Latitude, &event.Location.Longitude, &event.Location.ZipCode, &event.Location.City, &event.Location.State,
 		&event.StartTime, &event.EndTime, &event.HostID, &event.MaxPlayers, &event.SkillLevel, &event.EventType, &event.IsRecurring,
 		&event.IsNewcomerFriendly, &event.CreatedAt, &event.UpdatedAt,
@@ -87,6 +87,16 @@ func (r *EventRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Ev
 		return nil, fmt.Errorf("failed to get host name: %w", err)
 	}
 	event.HostName = hostName
+
+	// Get court name from courts table if court_id is provided
+	if event.CourtID != uuid.Nil {
+		var courtName string
+		err = r.db.QueryRowContext(ctx, "SELECT name FROM courts WHERE id = $1", event.CourtID).Scan(&courtName)
+		if err != nil && err != sql.ErrNoRows {
+			return nil, fmt.Errorf("failed to get court name: %w", err)
+		}
+		event.CourtName = courtName
+	}
 
 	// Query event RSVPs
 	rsvpRows, err := r.db.QueryContext(ctx, `
@@ -126,7 +136,7 @@ func (r *EventRepository) GetEvents(ctx context.Context, latitude, longitude flo
 	// Base query with geospatial filtering
 	baseQuery := `
 		SELECT 
-			id, title, description, court_id, court_name, latitude, longitude, zip_code, city, state,
+			id, title, description, court_id, latitude, longitude, zip_code, city, state,
 			start_time, end_time, host_id, max_players, skill_level, event_type, is_recurring,
 			is_newcomer_friendly, created_at, updated_at,
 			( 6371 * acos( cos( radians($1) ) * cos( radians( latitude ) ) * cos( radians( longitude ) - radians($2) ) + sin( radians($1) ) * sin( radians( latitude ) ) ) ) AS distance
@@ -216,7 +226,7 @@ func (r *EventRepository) GetEvents(ctx context.Context, latitude, longitude flo
 		event := &models.Event{}
 		var distance float64 // to scan the calculated distance
 		err := rows.Scan(
-			&event.ID, &event.Title, &event.Description, &event.CourtID, &event.CourtName,
+			&event.ID, &event.Title, &event.Description, &event.CourtID,
 			&event.Location.Latitude, &event.Location.Longitude, &event.Location.ZipCode, &event.Location.City, &event.Location.State,
 			&event.StartTime, &event.EndTime, &event.HostID, &event.MaxPlayers, &event.SkillLevel, &event.EventType, &event.IsRecurring,
 			&event.IsNewcomerFriendly, &event.CreatedAt, &event.UpdatedAt, &distance,
@@ -242,6 +252,16 @@ func (r *EventRepository) GetEvents(ctx context.Context, latitude, longitude flo
 			return nil, 0, fmt.Errorf("failed to get host name: %w", err)
 		}
 		events[i].HostName = hostName
+
+		// Get court name if court_id is provided
+		if event.CourtID != uuid.Nil {
+			var courtName string
+			err = r.db.QueryRowContext(ctx, "SELECT name FROM courts WHERE id = $1", event.CourtID).Scan(&courtName)
+			if err != nil && err != sql.ErrNoRows {
+				return nil, 0, fmt.Errorf("failed to get court name: %w", err)
+			}
+			events[i].CourtName = courtName
+		}
 
 		// Get RSVP count and preview
 		rsvpRows, err := r.db.QueryContext(ctx, `

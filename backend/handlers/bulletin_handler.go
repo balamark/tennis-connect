@@ -29,7 +29,11 @@ func (h *BulletinHandler) GetBulletins(c *gin.Context) {
 	// Parse location parameters
 	lat, _ := strconv.ParseFloat(c.DefaultQuery("latitude", "37.7749"), 64)
 	lng, _ := strconv.ParseFloat(c.DefaultQuery("longitude", "-122.4194"), 64)
-	radius, _ := strconv.ParseFloat(c.DefaultQuery("radius", "10"), 64)
+	radiusStr := c.Query("radius")
+	var radius float64 = -1 // -1 means no radius limit
+	if radiusStr != "" {
+		radius, _ = strconv.ParseFloat(radiusStr, 64)
+	}
 
 	// Optional filters
 	skillLevel := c.Query("skill_level")

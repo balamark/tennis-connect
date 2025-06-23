@@ -40,13 +40,13 @@ func (r *BulletinRepository) Create(ctx context.Context, bulletin *models.Bullet
 	_, err = tx.ExecContext(ctx, `
 		INSERT INTO bulletins (
 			id, user_id, title, description, latitude, longitude, zip_code, city, state,
-			court_id, court_name, start_time, end_time, skill_level, game_type, is_active,
+			court_id, start_time, end_time, skill_level, game_type, is_active,
 			created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 	`,
 		bulletin.ID, bulletin.UserID, bulletin.Title, bulletin.Description,
 		bulletin.Location.Latitude, bulletin.Location.Longitude, bulletin.Location.ZipCode, bulletin.Location.City, bulletin.Location.State,
-		bulletin.CourtID, bulletin.CourtName, bulletin.StartTime, bulletin.EndTime, bulletin.SkillLevel, bulletin.GameType, bulletin.IsActive,
+		bulletin.CourtID, bulletin.StartTime, bulletin.EndTime, bulletin.SkillLevel, bulletin.GameType, bulletin.IsActive,
 		bulletin.CreatedAt, bulletin.UpdatedAt,
 	)
 	if err != nil {
@@ -65,13 +65,13 @@ func (r *BulletinRepository) GetByID(ctx context.Context, id uuid.UUID) (*models
 	err := r.db.QueryRowContext(ctx, `
 		SELECT 
 			user_id, title, description, latitude, longitude, zip_code, city, state,
-			court_id, court_name, start_time, end_time, skill_level, game_type, is_active,
+			court_id, start_time, end_time, skill_level, game_type, is_active,
 			created_at, updated_at
 		FROM bulletins WHERE id = $1
 	`, id).Scan(
 		&bulletin.UserID, &bulletin.Title, &bulletin.Description,
 		&bulletin.Location.Latitude, &bulletin.Location.Longitude, &bulletin.Location.ZipCode, &bulletin.Location.City, &bulletin.Location.State,
-		&bulletin.CourtID, &bulletin.CourtName, &bulletin.StartTime, &bulletin.EndTime, &bulletin.SkillLevel, &bulletin.GameType, &bulletin.IsActive,
+		&bulletin.CourtID, &bulletin.StartTime, &bulletin.EndTime, &bulletin.SkillLevel, &bulletin.GameType, &bulletin.IsActive,
 		&bulletin.CreatedAt, &bulletin.UpdatedAt,
 	)
 	if err != nil {
@@ -88,6 +88,16 @@ func (r *BulletinRepository) GetByID(ctx context.Context, id uuid.UUID) (*models
 		return nil, fmt.Errorf("failed to get user name: %w", err)
 	}
 	bulletin.UserName = userName
+
+	// Get court name from courts table if court_id is provided
+	if bulletin.CourtID != nil {
+		var courtName string
+		err = r.db.QueryRowContext(ctx, "SELECT name FROM courts WHERE id = $1", *bulletin.CourtID).Scan(&courtName)
+		if err != nil && err != sql.ErrNoRows {
+			return nil, fmt.Errorf("failed to get court name: %w", err)
+		}
+		bulletin.CourtName = courtName
+	}
 
 	// Query bulletin responses
 	responseRows, err := r.db.QueryContext(ctx, `
@@ -127,20 +137,40 @@ func (r *BulletinRepository) GetByID(ctx context.Context, id uuid.UUID) (*models
 
 // GetBulletins retrieves bulletins with filtering and pagination
 func (r *BulletinRepository) GetBulletins(ctx context.Context, latitude, longitude float64, radius float64, filters map[string]interface{}, page, limit int) ([]*models.Bulletin, int, error) {
-	// Base query with geospatial filtering
-	baseQuery := `
-		SELECT 
-			id, user_id, title, description, latitude, longitude, zip_code, city, state,
-			court_id, court_name, start_time, end_time, skill_level, game_type, is_active,
-			created_at, updated_at,
-			( 6371 * acos( cos( radians($1) ) * cos( radians( latitude ) ) * cos( radians( longitude ) - radians($2) ) + sin( radians($1) ) * sin( radians( latitude ) ) ) ) AS distance
-		FROM bulletins
-	`
+	// Base query - include distance calculation only if radius is specified
+	var baseQuery string
+	if radius >= 0 {
+		baseQuery = `
+			SELECT 
+				id, user_id, title, description, latitude, longitude, zip_code, city, state,
+				court_id, start_time, end_time, skill_level, game_type, is_active,
+				created_at, updated_at,
+				( 6371 * acos( cos( radians($1) ) * cos( radians( latitude ) ) * cos( radians( longitude ) - radians($2) ) + sin( radians($1) ) * sin( radians( latitude ) ) ) ) AS distance
+			FROM bulletins
+		`
+	} else {
+		baseQuery = `
+			SELECT 
+				id, user_id, title, description, latitude, longitude, zip_code, city, state,
+				court_id, start_time, end_time, skill_level, game_type, is_active,
+				created_at, updated_at,
+				0 AS distance
+			FROM bulletins
+		`
+	}
 	countQuery := `SELECT COUNT(*) FROM bulletins`
 
 	whereClauses := []string{}
-	args := []interface{}{latitude, longitude}
-	argCount := 3
+	var args []interface{}
+	var argCount int
+	
+	if radius >= 0 {
+		args = []interface{}{latitude, longitude}
+		argCount = 3
+	} else {
+		args = []interface{}{}
+		argCount = 1
+	}
 
 	// Add filters
 	if skillLevel, ok := filters["skillLevel"].(string); ok && skillLevel != "" {
@@ -172,21 +202,25 @@ func (r *BulletinRepository) GetBulletins(ctx context.Context, latitude, longitu
 		countQuery += " WHERE " + utils.JoinStrings(whereClauses, " AND ")
 	}
 
-	// Add distance filter
-	distanceFilter := fmt.Sprintf("( 6371 * acos( cos( radians($1) ) * cos( radians( latitude ) ) * cos( radians( longitude ) - radians($2) ) + sin( radians($1) ) * sin( radians( latitude ) ) ) ) < $%d", argCount)
-	if len(whereClauses) == 0 {
-		baseQuery += " WHERE " + distanceFilter
-		countQuery += " WHERE " + distanceFilter
-	} else {
-		baseQuery += " AND " + distanceFilter
-		countQuery += " AND " + distanceFilter
+	// Add distance filter only if radius is specified (radius >= 0)
+	if radius >= 0 {
+		distanceFilter := fmt.Sprintf("( 6371 * acos( cos( radians($1) ) * cos( radians( latitude ) ) * cos( radians( longitude ) - radians($2) ) + sin( radians($1) ) * sin( radians( latitude ) ) ) ) < $%d", argCount)
+		if len(whereClauses) == 0 {
+			baseQuery += " WHERE " + distanceFilter
+			countQuery += " WHERE " + distanceFilter
+		} else {
+			baseQuery += " AND " + distanceFilter
+			countQuery += " AND " + distanceFilter
+		}
+		args = append(args, radius) // radius in km
+		argCount++
 	}
-	args = append(args, radius) // radius in km
-	argCount++
 
 	// Get total count for pagination
 	var totalBulletins int
-	err := r.db.QueryRowContext(ctx, countQuery, args[:argCount-1]...).Scan(&totalBulletins)
+	// Use all current args for count (pagination args haven't been added yet)
+	countArgs := args
+	err := r.db.QueryRowContext(ctx, countQuery, countArgs...).Scan(&totalBulletins)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to count bulletins: %w", err)
 	}
@@ -210,7 +244,7 @@ func (r *BulletinRepository) GetBulletins(ctx context.Context, latitude, longitu
 		err := rows.Scan(
 			&bulletin.ID, &bulletin.UserID, &bulletin.Title, &bulletin.Description,
 			&bulletin.Location.Latitude, &bulletin.Location.Longitude, &bulletin.Location.ZipCode, &bulletin.Location.City, &bulletin.Location.State,
-			&bulletin.CourtID, &bulletin.CourtName, &bulletin.StartTime, &bulletin.EndTime, &bulletin.SkillLevel, &bulletin.GameType, &bulletin.IsActive,
+			&bulletin.CourtID, &bulletin.StartTime, &bulletin.EndTime, &bulletin.SkillLevel, &bulletin.GameType, &bulletin.IsActive,
 			&bulletin.CreatedAt, &bulletin.UpdatedAt, &distance,
 		)
 		if err != nil {
@@ -225,7 +259,7 @@ func (r *BulletinRepository) GetBulletins(ctx context.Context, latitude, longitu
 		return nil, 0, fmt.Errorf("error iterating bulletin rows: %w", err)
 	}
 
-	// Fetch usernames for bulletins
+	// Fetch usernames and court names for bulletins
 	for i, bulletin := range bulletins {
 		var userName string
 		err = r.db.QueryRowContext(ctx, "SELECT name FROM users WHERE id = $1", bulletin.UserID).Scan(&userName)
@@ -233,6 +267,16 @@ func (r *BulletinRepository) GetBulletins(ctx context.Context, latitude, longitu
 			return nil, 0, fmt.Errorf("failed to get user name: %w", err)
 		}
 		bulletins[i].UserName = userName
+
+		// Get court name from courts table if court_id is provided
+		if bulletin.CourtID != nil {
+			var courtName string
+			err = r.db.QueryRowContext(ctx, "SELECT name FROM courts WHERE id = $1", *bulletin.CourtID).Scan(&courtName)
+			if err != nil && err != sql.ErrNoRows {
+				return nil, 0, fmt.Errorf("failed to get court name: %w", err)
+			}
+			bulletins[i].CourtName = courtName
+		}
 
 		// Fetch bulletin responses
 		responseRows, err := r.db.QueryContext(ctx, `

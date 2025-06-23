@@ -155,10 +155,10 @@ const NearbyPlayers = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, fetchAllUsers]);
 
   // New function to fetch all users as fallback
-  const fetchAllUsers = async (token, apiUrl) => {
+  const fetchAllUsers = useCallback(async (token, apiUrl) => {
     try {
       // Try to fetch all users without radius restriction
       const allUsersResponse = await fetch(`${apiUrl}/api/users/nearby?radius=1000`, {
@@ -201,7 +201,7 @@ const NearbyPlayers = () => {
     } catch (err) {
       throw err;
     }
-  };
+  }, [filters]);
 
   useEffect(() => {
     if (isDemoMode) {
@@ -361,8 +361,9 @@ const NearbyPlayers = () => {
     return animals[animalIndex];
   };
 
-  const formatTime = (timeString) => {
-    const [hours, minutes] = timeString.split(':');
+  // eslint-disable-next-line no-unused-vars
+  const formatTime = (availableTime) => {
+    const [hours, minutes] = availableTime.split(':');
     const hour = parseInt(hours);
     const ampm = hour >= 12 ? 'PM' : 'AM';
     const displayHour = hour % 12 || 12;

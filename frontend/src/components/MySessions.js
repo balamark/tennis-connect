@@ -13,7 +13,7 @@ const MySessions = () => {
 
   useEffect(() => {
     loadUserBookings();
-  }, [isDemoMode]);
+  }, [isDemoMode, loadUserBookings]);
 
   const loadUserBookings = async () => {
     try {

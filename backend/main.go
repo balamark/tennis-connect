@@ -115,7 +115,7 @@ func main() {
 	})
 
 	// Configure CORS
-	allowedOrigins := []string{"http://localhost:3000", "http://localhost:80", "http://localhost"}
+	allowedOrigins := []string{"http://localhost:3000", "http://localhost:80", "http://localhost", "http://127.0.0.1:3000"}
 	if cfg.IsProduction() {
 		// Add production frontend URLs here
 		allowedOrigins = append(allowedOrigins, 
@@ -124,12 +124,33 @@ func main() {
 		)
 	}
 	
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     allowedOrigins,
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
-		AllowCredentials: true,
-	}))
+	// In development, be more permissive with CORS - allow common local development origins
+	devOrigins := []string{
+		"http://localhost:3000", 
+		"http://localhost:3001", 
+		"http://127.0.0.1:3000",
+		"http://127.0.0.1:3001",
+		"http://localhost:80", 
+		"http://localhost",
+	}
+	
+	if !cfg.IsProduction() {
+		r.Use(cors.New(cors.Config{
+			AllowOrigins:     devOrigins,
+			AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+			AllowHeaders:     []string{"Origin", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization", "Accept", "X-Requested-With"},
+			AllowCredentials: true,
+			MaxAge:           12 * 3600,
+		}))
+	} else {
+		r.Use(cors.New(cors.Config{
+			AllowOrigins:     allowedOrigins,
+			AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+			AllowHeaders:     []string{"Origin", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization", "Accept"},
+			AllowCredentials: true,
+			MaxAge:           12 * 3600, // 12 hours
+		}))
+	}
 
 	// Routes
 	setupRoutes(r, userHandler, courtHandler, bulletinHandler, eventHandler, communityHandler, jwtManager, dbManager)
@@ -242,7 +263,12 @@ func setupRoutes(r *gin.Engine, userHandler *handlers.UserHandler,
 		bulletinRoutes := api.Group("/bulletins")
 		bulletinRoutes.Use(requireDatabase)
 		{
-			bulletinRoutes.GET("/", authMiddleware(jwtManager), bulletinHandler.GetBulletins)
+			// Public routes (no auth required)
+			bulletinRoutes.GET("", bulletinHandler.GetBulletins)
+			bulletinRoutes.GET("/", bulletinHandler.GetBulletins)
+			
+			// Protected routes (auth required)
+			bulletinRoutes.POST("", authMiddleware(jwtManager), bulletinHandler.CreateBulletin)
 			bulletinRoutes.POST("/", authMiddleware(jwtManager), bulletinHandler.CreateBulletin)
 			bulletinRoutes.POST("/:id/respond", authMiddleware(jwtManager), bulletinHandler.RespondToBulletin)
 			bulletinRoutes.PUT("/:id/response/:response_id", authMiddleware(jwtManager), bulletinHandler.UpdateBulletinResponseStatus)

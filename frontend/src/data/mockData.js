@@ -527,7 +527,12 @@ export const getMockSessions = () => [
 // Mock Court Availability Data
 export const getMockCourtAvailability = (courtId, date) => {
   const timeSlots = [];
-  const dateStr = date.toDateString();
+  // eslint-disable-next-line no-unused-vars
+  const dateStr = date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
   
   // Generate availability for 8 AM to 8 PM
   for (let hour = 8; hour < 20; hour++) {
