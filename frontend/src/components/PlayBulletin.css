@@ -489,4 +489,245 @@
   .form-row {
     grid-template-columns: 1fr;
   }
+}
+
+/* Custom Slider Styles */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #3d98f4;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.slider::-webkit-slider-thumb:hover {
+  width: 24px;
+  height: 24px;
+  background: #2d88e4;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #3d98f4;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.slider::-moz-range-thumb:hover {
+  background-color: #2d88e4;
+  border-color: #2d88e4;
+  transform: scale(1.1);
+}
+
+/* Enhanced Response Styles - Facebook-like comment boxes */
+.response-comment-box {
+  border: 1px solid #e7edf4;
+  background-color: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.response-comment-box:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border-color: #d0d7de;
+}
+
+.response-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.response-user-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.response-avatar {
+  width: 40px;
+  height: 40px;
+  background-color: #3d98f4;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.response-user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.response-username {
+  font-weight: 600;
+  color: #0d141c;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.response-timestamp {
+  color: #49739c;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.response-status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid;
+}
+
+.response-status-badge.accepted {
+  background-color: #f0f9f0;
+  color: #2d7d32;
+  border-color: #c8e6c8;
+}
+
+.response-status-badge.declined {
+  background-color: #fef0f0;
+  color: #d32f2f;
+  border-color: #ffc1c1;
+}
+
+.response-message {
+  color: #0d141c;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  margin-bottom: 12px;
+}
+
+.response-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f2f5;
+}
+
+.response-action-button {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.response-action-button.accept {
+  background-color: #22c55e;
+  color: white;
+}
+
+.response-action-button.accept:hover {
+  background-color: #16a34a;
+  transform: translateY(-1px);
+}
+
+.response-action-button.decline {
+  background-color: #ef4444;
+  color: white;
+}
+
+.response-action-button.decline:hover {
+  background-color: #dc2626;
+  transform: translateY(-1px);
+}
+
+.response-status-message {
+  padding-top: 12px;
+  border-top: 1px solid #f0f2f5;
+}
+
+.response-status-text {
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.response-status-text.accepted {
+  color: #16a34a;
+}
+
+.response-status-text.declined {
+  color: #dc2626;
+}
+
+/* Spacing between response boxes */
+.responses-container {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.responses-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0d141c;
+  margin-bottom: 16px;
+}
+
+/* Mobile responsiveness for response boxes */
+@media (max-width: 768px) {
+  .response-comment-box {
+    padding: 12px;
+    border-radius: 8px;
+  }
+  
+  .response-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 13px;
+  }
+  
+  .response-user-section {
+    gap: 10px;
+  }
+  
+  .response-actions {
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .response-action-button {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
 } 

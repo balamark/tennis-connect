@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/config';
 import { useDemoMode } from '../contexts/DemoModeContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import { getMockBulletins } from '../data/mockData';
 import Modal from './Modal';
+import './PlayBulletin.css';
 
 const PlayBulletin = () => {
   const { isDemoMode } = useDemoMode();
+  const { addNotification } = useNotifications();
   const [bulletins, setBulletins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -167,12 +170,7 @@ const PlayBulletin = () => {
 
   const handleRadiusChange = (e) => {
     const value = parseInt(e.target.value);
-    // Snap to 999 (All Distances) when slider gets close to the end
-    if (value >= 95) {
-      setSearchRadius(999);
-    } else {
-      setSearchRadius(value);
-    }
+    setSearchRadius(value);
   };
 
   const handleNewBulletinChange = (e) => {
@@ -340,9 +338,33 @@ const PlayBulletin = () => {
   };
 
   const handleShowResponseForm = (bulletinId) => {
+    // Find bulletin details to pre-fill response message
+    const bulletin = bulletins.find(b => b.id === bulletinId);
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    // Create default response message with location, time, and contact info
+    let defaultMessage = '';
+    if (bulletin) {
+      const startTime = bulletin.start_time ? new Date(bulletin.start_time).toLocaleString() : 'TBD';
+      const location = bulletin.court_name || `${bulletin.location?.city || 'TBD'}, ${bulletin.location?.state || 'TBD'}`;
+      
+      defaultMessage = `Hi! I'm interested in playing tennis with you.
+
+📍 Location: ${location}
+⏰ Time: ${startTime}
+🎾 Skill Level: ${bulletin.skill_level || 'TBD'}
+🏆 Game Type: ${bulletin.game_type || 'Either'}
+
+Feel free to reach out to me at:
+📱 Phone: [Your phone number]
+💬 LINE ID: [Your LINE ID]
+
+Looking forward to playing with you!`;
+    }
+
     setResponseForm({
       bulletinId,
-      message: '',
+      message: defaultMessage,
     });
   };
 
@@ -376,7 +398,28 @@ const PlayBulletin = () => {
       
       fetchBulletins();
       
-      showModal('success', 'Response Sent', 'Your response has been sent!');
+      // Find the bulletin details for notification
+      const targetBulletin = bulletins.find(b => b.id === responseForm.bulletinId);
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      
+      if (targetBulletin) {
+        // NOTE: In a real app, this notification would be sent to the bulletin owner
+        // via backend/websocket. Here we simulate it for demo purposes.
+        // The bulletin owner (targetBulletin.user_id) should get the notification,
+        // not the person responding (currentUser.id)
+        
+        addNotification({
+          type: 'match_request',
+          title: 'New Match Request',
+          message: `${currentUser.name || 'Someone'} responded to your "${targetBulletin.title}" bulletin`,
+          avatar: currentUser.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face',
+          actionRequired: true,
+          bulletinId: targetBulletin.id,
+          responderId: currentUser.id
+        });
+      }
+      
+      showModal('success', 'Response Sent', 'Your response has been sent to the bulletin owner! They will be notified and can accept or decline your request.');
     } catch (err) {
       console.error('Error responding to bulletin:', err);
       
@@ -404,6 +447,38 @@ const PlayBulletin = () => {
           onCancel: () => setModal({ isOpen: false })
         });
       }
+    }
+  };
+
+  const handleResponseAction = async (bulletinId, responseId, action) => {
+    try {
+      await api.put(`/bulletins/${bulletinId}/response/${responseId}`, {
+        status: action
+      });
+      
+      fetchBulletins();
+      
+      // Find the response details to notify the person who responded
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const targetBulletin = bulletins.find(b => b.id === bulletinId);
+      
+      // NOTE: In a real app, this notification would be sent to the responder
+      // via backend/websocket. Here we simulate it for demo purposes.
+      // The person who responded should get the notification about acceptance/decline
+      
+      addNotification({
+        type: action === 'Accepted' ? 'partner_found' : 'match_declined',
+        title: action === 'Accepted' ? 'Partner Found!' : 'Response Update',
+        message: action === 'Accepted' 
+          ? `Your match request for "${targetBulletin?.title || 'a tennis match'}" has been accepted! Check your messages for contact details.`
+          : `Your match request for "${targetBulletin?.title || 'a tennis match'}" was declined. Keep looking for other matches!`,
+        avatar: currentUser.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face'
+      });
+      
+      showModal('success', 'Response Updated', `Response ${action.toLowerCase()} successfully!`);
+    } catch (err) {
+      console.error('Error updating response:', err);
+      showModal('error', 'Update Failed', 'Failed to update response. Please try again.');
     }
   };
 
@@ -589,23 +664,35 @@ const PlayBulletin = () => {
                 />
               </div>
               {/* Search Radius Slider */}
-              <div className="flex items-center gap-x-2 rounded-xl bg-[#e7edf4] pl-4 pr-4 py-1" title={searchRadius === 999 ? 'Search all bulletins regardless of distance' : `Search within ${searchRadius} miles of your location`}>
-                <label htmlFor="search-radius" className="text-[#0d141c] text-sm font-medium leading-normal whitespace-nowrap">
-                  {searchRadius === 999 ? 'All Distances' : `Radius: ${searchRadius} mi`}
+              <div className="flex items-center gap-x-3 rounded-xl bg-[#e7edf4] pl-4 pr-4 py-2" title={searchRadius === 999 ? 'Search all bulletins regardless of distance' : `Search within ${searchRadius} miles of your location`}>
+                <label htmlFor="search-radius" className="text-[#0d141c] text-sm font-medium leading-normal whitespace-nowrap min-w-[90px]">
+                  {searchRadius === 999 ? 'All Distances' : `${searchRadius} mi`}
                 </label>
-                <input
-                  id="search-radius"
-                  type="range"
-                  min="5"
-                  max="999"
-                  step="5"
-                  value={searchRadius}
-                  onChange={handleRadiusChange}
-                  className="w-20 h-2 bg-[#c4d5e6] rounded-lg appearance-none cursor-pointer"
-                  style={{
-                    background: `linear-gradient(to right, #3d98f4 0%, #3d98f4 ${(searchRadius - 5) / 994 * 100}%, #c4d5e6 ${(searchRadius - 5) / 994 * 100}%, #c4d5e6 100%)`
-                  }}
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    id="search-radius"
+                    type="range"
+                    min="5"
+                    max="100"
+                    step="5"
+                    value={searchRadius === 999 ? 100 : searchRadius}
+                    onChange={handleRadiusChange}
+                    className="w-24 h-3 bg-[#c4d5e6] rounded-lg appearance-none cursor-pointer slider"
+                    style={{
+                      background: `linear-gradient(to right, #3d98f4 0%, #3d98f4 ${searchRadius === 999 ? 100 : (searchRadius - 5) / 95 * 100}%, #c4d5e6 ${searchRadius === 999 ? 100 : (searchRadius - 5) / 95 * 100}%, #c4d5e6 100%)`
+                    }}
+                  />
+                  <button
+                    onClick={() => setSearchRadius(999)}
+                    className={`px-2 py-1 text-xs rounded transition-colors ${
+                      searchRadius === 999 
+                        ? 'bg-[#3d98f4] text-white' 
+                        : 'bg-white text-[#3d98f4] border border-[#3d98f4] hover:bg-[#3d98f4] hover:text-white'
+                    }`}
+                  >
+                    All
+                  </button>
+                </div>
               </div>
               <button 
                 onClick={handleApplyFilters}
@@ -698,42 +785,104 @@ const PlayBulletin = () => {
 
                         {/* User's bulletin responses */}
                         {isUserBulletin(bulletin) && bulletin.responses && bulletin.responses.length > 0 && (
-                          <div className="mt-3 space-y-2">
-                            <h4 className="text-[#0d141c] font-medium">Responses ({bulletin.responses.length})</h4>
-                            {bulletin.responses.map(response => (
-                              <div key={response.id} className="bg-[#f8f9fa] p-3 rounded-lg">
-                                <div className="flex justify-between items-start mb-1">
-                                  <span className="text-[#0d141c] font-medium text-sm">{response.user_name || response.userName}</span>
-                                  <span className="text-[#49739c] text-xs">
-                                    {new Date(response.createdAt).toLocaleString()}
-                                  </span>
+                          <div className="mt-4 space-y-3">
+                            <h4 className="text-[#0d141c] font-semibold text-lg">Responses ({bulletin.responses.length})</h4>
+                            {bulletin.responses.map(response => {
+                              // Helper function to format date safely
+                              const formatResponseDate = (response) => {
+                                const dateStr = response.createdAt || response.created_at || response.date_created || response.timestamp;
+                                if (!dateStr) return 'Recently';
+                                
+                                try {
+                                  const date = new Date(dateStr);
+                                  if (isNaN(date.getTime())) return 'Recently';
+                                  
+                                  const now = new Date();
+                                  const diffInHours = (now - date) / (1000 * 60 * 60);
+                                  
+                                  if (diffInHours < 1) return 'Just now';
+                                  if (diffInHours < 24) return `${Math.floor(diffInHours)} hours ago`;
+                                  if (diffInHours < 168) return `${Math.floor(diffInHours / 24)} days ago`;
+                                  
+                                  return date.toLocaleDateString();
+                                } catch (error) {
+                                  return 'Recently';
+                                }
+                              };
+
+                              return (
+                                <div key={response.id} className="border border-[#e7edf4] bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                                  {/* Response Header */}
+                                  <div className="flex justify-between items-start mb-3">
+                                    <div className="flex items-center gap-3">
+                                      {/* User Avatar */}
+                                      <div className="w-10 h-10 bg-[#3d98f4] rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                                        {(response.user_name || response.userName || 'U').charAt(0).toUpperCase()}
+                                      </div>
+                                      <div>
+                                        <span className="text-[#0d141c] font-semibold text-sm">
+                                          {response.user_name || response.userName || 'Anonymous User'}
+                                        </span>
+                                        <div className="text-[#49739c] text-xs">
+                                          {formatResponseDate(response)}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    {/* Status Badge */}
+                                    {response.status !== 'Pending' && (
+                                      <div className={`px-3 py-1 text-xs font-medium rounded-full ${
+                                        response.status === 'Accepted' 
+                                          ? 'bg-green-100 text-green-700 border border-green-200' 
+                                          : 'bg-red-100 text-red-700 border border-red-200'
+                                      }`}>
+                                        {response.status}
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Response Message */}
+                                  <div className="mb-3">
+                                    <p className="text-[#0d141c] text-sm leading-relaxed whitespace-pre-wrap">
+                                      {response.message}
+                                    </p>
+                                  </div>
+
+                                  {/* Action Buttons for Pending Responses */}
+                                  {response.status === 'Pending' && (
+                                    <div className="flex gap-2 pt-2 border-t border-[#f0f2f5]">
+                                      <button 
+                                        className="flex-1 px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
+                                        onClick={() => handleResponseAction(bulletin.id, response.id, 'Accepted')}
+                                      >
+                                        ✓ Accept
+                                      </button>
+                                      <button 
+                                        className="flex-1 px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+                                        onClick={() => handleResponseAction(bulletin.id, response.id, 'Declined')}
+                                      >
+                                        ✗ Decline
+                                      </button>
+                                    </div>
+                                  )}
+
+                                  {/* Accepted/Declined Status Message */}
+                                  {response.status === 'Accepted' && (
+                                    <div className="pt-2 border-t border-[#f0f2f5]">
+                                      <p className="text-green-600 text-sm font-medium flex items-center gap-2">
+                                        ✓ You accepted this match request
+                                      </p>
+                                    </div>
+                                  )}
+                                  {response.status === 'Declined' && (
+                                    <div className="pt-2 border-t border-[#f0f2f5]">
+                                      <p className="text-red-600 text-sm font-medium flex items-center gap-2">
+                                        ✗ You declined this match request
+                                      </p>
+                                    </div>
+                                  )}
                                 </div>
-                                <p className="text-[#49739c] text-sm">{response.message}</p>
-                                {response.status === 'Pending' && (
-                                  <div className="flex gap-2 mt-2">
-                                    <button 
-                                      className="px-3 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition-colors"
-                                      onClick={() => alert('Accept/Decline functionality coming soon!')}
-                                    >
-                                      Accept
-                                    </button>
-                                    <button 
-                                      className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition-colors"
-                                      onClick={() => alert('Accept/Decline functionality coming soon!')}
-                                    >
-                                      Decline
-                                    </button>
-                                  </div>
-                                )}
-                                {response.status !== 'Pending' && (
-                                  <div className={`inline-block px-2 py-1 text-xs rounded mt-2 ${
-                                    response.status === 'Accepted' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                  }`}>
-                                    {response.status}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
 
@@ -741,9 +890,9 @@ const PlayBulletin = () => {
                         {isUserBulletin(bulletin) && (
                           <button
                             onClick={() => handleDeleteBulletin(bulletin.id)}
-                            className="mt-2 text-red-600 text-sm hover:text-red-800 transition-colors self-start"
+                            className="mt-3 px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors self-start"
                           >
-                            Delete Bulletin
+                            🗑️ Delete Bulletin
                           </button>
                         )}
                       </div>

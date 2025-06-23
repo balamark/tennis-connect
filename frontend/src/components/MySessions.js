@@ -11,10 +11,6 @@ const MySessions = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('upcoming'); // 'upcoming' or 'past'
 
-  useEffect(() => {
-    loadUserBookings();
-  }, [isDemoMode, loadUserBookings]);
-
   const loadUserBookings = async () => {
     try {
       setLoading(true);
@@ -42,6 +38,10 @@ const MySessions = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadUserBookings();
+  }, [isDemoMode]);
 
   const handleCancelBooking = async (bookingId) => {
     if (!window.confirm('Are you sure you want to cancel this booking?')) {

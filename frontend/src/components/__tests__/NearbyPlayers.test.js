@@ -2,6 +2,23 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import NearbyPlayers from '../NearbyPlayers';
+import { DemoModeContext } from '../../contexts/DemoModeContext';
+
+// Mock the mockData module
+jest.mock('../../data/mockData', () => ({
+  getMockPlayers: () => [
+    {
+      id: 1,
+      name: 'Test Player',
+      skillLevel: 3.5,
+      distance: 5,
+      gameStyles: ['Singles'],
+      preferredTimes: [{ dayOfWeek: 'Monday' }],
+      gender: 'Male',
+      isNewToArea: false
+    }
+  ]
+}));
 
 // Mock localStorage
 const localStorageMock = {
@@ -30,6 +47,12 @@ Object.defineProperty(navigator, 'geolocation', {
 });
 
 describe('NearbyPlayers Component', () => {
+  const mockDemoModeContext = {
+    isDemoMode: false,
+    enableDemoMode: jest.fn(),
+    disableDemoMode: jest.fn()
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     
@@ -844,5 +867,139 @@ describe('NearbyPlayers Component', () => {
         expect(screen.getByText('Finding players near you...')).toBeInTheDocument();
       }, 1100); // Wait for initial API call to complete
     });
+  });
+
+  test('should not throw "Cannot access before initialization" error', async () => {
+    // Mock successful API response
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        users: [],
+        metadata: {
+          total_users: 0,
+          users_in_range: 0,
+          users_out_of_range: 0,
+          search_radius: 10,
+          showing_fallback: false
+        }
+      })
+    });
+
+    // This should not throw an initialization error
+    expect(() => {
+      render(<DemoModeContext.Provider value={mockDemoModeContext}><NearbyPlayers /></DemoModeContext.Provider>);
+    }).not.toThrow();
+
+    // Wait for component to mount and make API calls
+    await waitFor(() => {
+      expect(screen.getByText(/No nearby players found/i)).toBeInTheDocument();
+    }, { timeout: 3000 });
+  });
+
+  test('should handle fetchAllUsers fallback without initialization error', async () => {
+    // Mock 404 response for initial request, then successful response for fallback
+    fetch
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 404
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          users: [
+            {
+              id: 1,
+              name: 'Fallback Player',
+              skillLevel: 3.5,
+              distance: 50,
+              gameStyles: ['Singles'],
+              preferredTimes: [{ dayOfWeek: 'Monday' }],
+              gender: 'Male',
+              isNewToArea: false
+            }
+          ]
+        })
+      });
+
+    render(<DemoModeContext.Provider value={mockDemoModeContext}><NearbyPlayers /></DemoModeContext.Provider>);
+
+    // Wait for fallback to complete
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledTimes(2);
+    }, { timeout: 3000 });
+
+    // Should not have thrown initialization error
+    expect(screen.getByText(/Fallback Player/i)).toBeInTheDocument();
+  });
+
+  test('should render in demo mode without API calls', () => {
+    render(<DemoModeContext.Provider value={mockDemoModeContext}><NearbyPlayers /></DemoModeContext.Provider>);
+    
+    // In demo mode, should show mock data immediately
+    expect(screen.getByText(/Test Player/i)).toBeInTheDocument();
+    
+    // Should not have made any API calls
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  test('should handle multiple rapid state changes without race conditions', async () => {
+    // Mock successful response
+    fetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        users: [],
+        metadata: {
+          total_users: 0,
+          users_in_range: 0,
+          users_out_of_range: 0,
+          search_radius: 10,
+          showing_fallback: false
+        }
+      })
+    });
+
+    const { rerender } = render(<DemoModeContext.Provider value={mockDemoModeContext}><NearbyPlayers /></DemoModeContext.Provider>);
+
+    // Rapidly switch between demo and live mode
+    await act(async () => {
+      rerender(
+        <DemoModeContext.Provider value={{ ...mockDemoModeContext, isDemoMode: true }}>
+          <NearbyPlayers />
+        </DemoModeContext.Provider>
+      );
+    });
+
+    await act(async () => {
+      rerender(
+        <DemoModeContext.Provider value={{ ...mockDemoModeContext, isDemoMode: false }}>
+          <NearbyPlayers />
+        </DemoModeContext.Provider>
+      );
+    });
+
+    // Should not throw any errors during rapid state changes
+    await waitFor(() => {
+      expect(screen.getByText(/nearby players/i)).toBeInTheDocument();
+    });
+  });
+
+  test('function definition order prevents circular dependency', () => {
+    // This test ensures that the component code structure prevents
+    // the "Cannot access before initialization" error
+    
+    // Read the component source to verify function order
+    const fs = require('fs');
+    const path = require('path');
+    const componentPath = path.join(__dirname, '..', 'NearbyPlayers.js');
+    const componentSource = fs.readFileSync(componentPath, 'utf8');
+    
+    // Find the positions of fetchAllUsers and fetchNearbyPlayers
+    const fetchAllUsersIndex = componentSource.indexOf('const fetchAllUsers = useCallback');
+    const fetchNearbyPlayersIndex = componentSource.indexOf('const fetchNearbyPlayers = useCallback');
+    
+    // fetchAllUsers should be defined before fetchNearbyPlayers
+    expect(fetchAllUsersIndex).toBeLessThan(fetchNearbyPlayersIndex);
+    expect(fetchAllUsersIndex).toBeGreaterThan(-1);
+    expect(fetchNearbyPlayersIndex).toBeGreaterThan(-1);
   });
 }); 

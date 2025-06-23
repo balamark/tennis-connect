@@ -25,8 +25,6 @@ const NearbyPlayers = () => {
   const [stylesDropdownOpen, setStylesDropdownOpen] = useState(false);
   const [daysDropdownOpen, setDaysDropdownOpen] = useState(false);
 
-
-
   // Apply filters to player list
   const applyFilters = useCallback((playerList) => {
     return playerList.filter(player => {
@@ -51,7 +49,53 @@ const NearbyPlayers = () => {
     });
   }, [filters]);
 
-  // Real API call for live mode
+  // Function to fetch all users as fallback - defined BEFORE fetchNearbyPlayers
+  const fetchAllUsers = useCallback(async (token, apiUrl) => {
+    try {
+      // Try to fetch all users without radius restriction
+      const allUsersResponse = await fetch(`${apiUrl}/api/users/nearby?radius=1000`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (allUsersResponse.ok) {
+        const allUsersData = await allUsersResponse.json();
+        const allUsers = allUsersData.users || [];
+        
+        if (allUsers.length > 0) {
+          // Apply client-side filtering for skills, gender, etc.
+          const filteredUsers = allUsers.filter(user => {
+            if (filters.skillLevel && user.skillLevel !== filters.skillLevel) return false;
+            if (filters.gender && user.gender !== filters.gender) return false;
+            if (filters.isNewcomer && !user.isNewToArea) return false;
+            // Add more filters as needed
+            return true;
+          });
+
+          const usersToShow = filteredUsers.length > 0 ? filteredUsers : allUsers;
+          
+          setPlayers(usersToShow);
+          setSearchMetadata({
+            total_users: usersToShow.length,
+            users_in_range: usersToShow.filter(p => p.distance && p.distance <= filters.radius).length,
+            users_out_of_range: usersToShow.filter(p => !p.distance || p.distance > filters.radius).length,
+            search_radius: filters.radius,
+            showing_fallback: true
+          });
+          return;
+        }
+      }
+      
+      throw new Error('No users found in database');
+    } catch (err) {
+      throw err;
+    }
+  }, [filters]);
+
+  // Real API call for live mode - now defined AFTER fetchAllUsers
   const fetchNearbyPlayers = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -128,13 +172,13 @@ const NearbyPlayers = () => {
 
     } catch (err) {
       console.error('Error fetching nearby players:', err);
-             // Instead of showing error, try to fetch all users as final fallback
-       try {
-         const token = localStorage.getItem('token');
-         const apiUrl = process.env.REACT_APP_API_URL || 
-           (process.env.NODE_ENV === 'production' 
-             ? 'https://tennis-connect-backend-552905514167.us-central1.run.app'
-             : 'http://localhost:8080');
+      // Instead of showing error, try to fetch all users as final fallback
+      try {
+        const token = localStorage.getItem('token');
+        const apiUrl = process.env.REACT_APP_API_URL || 
+          (process.env.NODE_ENV === 'production' 
+            ? 'https://tennis-connect-backend-552905514167.us-central1.run.app'
+            : 'http://localhost:8080');
         if (token) {
           await fetchAllUsers(token, apiUrl);
           return;
@@ -156,52 +200,6 @@ const NearbyPlayers = () => {
       setLoading(false);
     }
   }, [filters, fetchAllUsers]);
-
-  // New function to fetch all users as fallback
-  const fetchAllUsers = useCallback(async (token, apiUrl) => {
-    try {
-      // Try to fetch all users without radius restriction
-      const allUsersResponse = await fetch(`${apiUrl}/api/users/nearby?radius=1000`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (allUsersResponse.ok) {
-        const allUsersData = await allUsersResponse.json();
-        const allUsers = allUsersData.users || [];
-        
-        if (allUsers.length > 0) {
-          // Apply client-side filtering for skills, gender, etc.
-          const filteredUsers = allUsers.filter(user => {
-            if (filters.skillLevel && user.skillLevel !== filters.skillLevel) return false;
-            if (filters.gender && user.gender !== filters.gender) return false;
-            if (filters.isNewcomer && !user.isNewToArea) return false;
-            // Add more filters as needed
-            return true;
-          });
-
-          const usersToShow = filteredUsers.length > 0 ? filteredUsers : allUsers;
-          
-          setPlayers(usersToShow);
-          setSearchMetadata({
-            total_users: usersToShow.length,
-            users_in_range: usersToShow.filter(p => p.distance && p.distance <= filters.radius).length,
-            users_out_of_range: usersToShow.filter(p => !p.distance || p.distance > filters.radius).length,
-            search_radius: filters.radius,
-            showing_fallback: true
-          });
-          return;
-        }
-      }
-      
-      throw new Error('No users found in database');
-    } catch (err) {
-      throw err;
-    }
-  }, [filters]);
 
   useEffect(() => {
     if (isDemoMode) {
