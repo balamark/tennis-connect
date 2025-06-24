@@ -12,14 +12,32 @@ const Register = () => {
     skillLevel: '',
     gameStyles: [],
     gender: '',
-    isNewToArea: false
+    isNewToArea: false,
+    city: '',
+    location: {
+      latitude: null,
+      longitude: null
+    }
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
   const navigate = useNavigate();
   
   const gameStyleOptions = ['Singles', 'Doubles', 'Social', 'Competitive'];
   const skillLevels = ['2.0', '2.5', '3.0', '3.5', '4.0', '4.5', '5.0', '5.5+'];
+  
+  // Common cities for easy selection with flags
+  const commonCities = [
+    { name: 'Taipei', flag: '🇹🇼' },
+    { name: 'Taitung', flag: '🇹🇼' },
+    { name: 'Luye', flag: '🇹🇼' },
+    { name: 'Paris', flag: '🇫🇷' },
+    { name: 'Frankfurt', flag: '🇩🇪' },
+    { name: 'Queenstown', flag: '🇳🇿' },
+    { name: 'Auckland', flag: '🇳🇿' }
+  ];
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -92,6 +110,11 @@ const Register = () => {
       return false;
     }
     
+    if (!formData.city.trim()) {
+      setError('City is required - it helps us find nearby players');
+      return false;
+    }
+    
     return true;
   };
 
@@ -115,11 +138,10 @@ const Register = () => {
       gender: formData.gender,
       isNewToArea: formData.isNewToArea,
       location: {
-        // Default location (can be updated later in profile)
-        latitude: 37.7749,
-        longitude: -122.4194,
+        latitude: formData.location.latitude || 0,
+        longitude: formData.location.longitude || 0,
         zipCode: '',
-        city: '',
+        city: formData.city.trim(),
         state: ''
       }
     };
@@ -138,7 +160,12 @@ const Register = () => {
         skillLevel: '',
         gameStyles: [],
         gender: '',
-        isNewToArea: false
+        isNewToArea: false,
+        city: '',
+        location: {
+          latitude: null,
+          longitude: null
+        }
       });
       
       alert('Registration successful! Please sign in.');
@@ -162,6 +189,79 @@ const Register = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle city selection from suggestions
+  const handleCitySelect = (city) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      city,
+      // Clear coordinates so backend will geocode the new city
+      location: {
+        ...prev.location,
+        latitude: null,
+        longitude: null
+      }
+    }));
+    setShowCitySuggestions(false);
+    if (error) {
+      setError('');
+    }
+  };
+  
+  // Handle manual city input changes
+  const handleCityChange = (e) => {
+    const city = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      city,
+      // Clear coordinates when city changes manually so backend will geocode
+      location: {
+        ...prev.location,
+        latitude: city !== prev.city ? null : prev.location.latitude,
+        longitude: city !== prev.city ? null : prev.location.longitude
+      }
+    }));
+    if (error) {
+      setError('');
+    }
+  };
+  
+  // Get user's current location
+  const getCurrentLocation = () => {
+    setLocationLoading(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setFormData(prev => ({
+            ...prev,
+            location: { latitude, longitude }
+          }));
+          // Try to get city name from coordinates using reverse geocoding
+          fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.city || data.locality) {
+                setFormData(prev => ({
+                  ...prev,
+                  city: data.city || data.locality
+                }));
+              }
+            })
+            .catch(err => console.error('Reverse geocoding failed:', err));
+          setLocationLoading(false);
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          setError('Unable to get your location. Please enter your city manually.');
+          setLocationLoading(false);
+        }
+      );
+    } else {
+      setError('Geolocation is not supported by this browser.');
+      setLocationLoading(false);
     }
   };
 
@@ -255,6 +355,57 @@ const Register = () => {
                 <option value="Other">Other</option>
               </select>
             </div>
+          </div>
+
+          {/* City Field - Required for finding nearby players */}
+          <div className="form-group">
+            <label htmlFor="city">
+              City <span className="required">*</span>
+              <small className="field-hint">Used to find nearby tennis players</small>
+            </label>
+            <div className="city-input-container">
+              <input
+                type="text"
+                id="city"
+                name="city"
+                value={formData.city}
+                onChange={handleCityChange}
+                onFocus={() => setShowCitySuggestions(true)}
+                onBlur={() => setTimeout(() => setShowCitySuggestions(false), 200)}
+                placeholder="Enter your city"
+                required
+              />
+              <button
+                type="button"
+                className="location-button"
+                onClick={getCurrentLocation}
+                disabled={locationLoading}
+                title="Use current location"
+              >
+                {locationLoading ? '📍' : '🎯'}
+              </button>
+            </div>
+            
+            {/* City Suggestions */}
+            {showCitySuggestions && (
+              <div className="city-suggestions">
+                <div className="suggestions-header">Popular cities:</div>
+                {commonCities.map(city => (
+                  <button
+                    key={city.name}
+                    type="button"
+                    className="city-suggestion"
+                    onClick={() => handleCitySelect(city.name)}
+                  >
+                    {city.flag} {city.name}
+                  </button>
+                ))}
+              </div>
+            )}
+            
+            <small className="form-text text-muted">
+              💡 Your city helps us connect you with nearby players. You can use the location button to auto-detect.
+            </small>
           </div>
           
           <div className="form-group">

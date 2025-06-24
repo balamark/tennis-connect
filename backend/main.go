@@ -236,6 +236,7 @@ func setupRoutes(r *gin.Engine, userHandler *handlers.UserHandler,
 			userRoutes.GET("/profile/:id", authMiddleware(jwtManager), userHandler.GetUserProfile)
 			userRoutes.PUT("/profile", authMiddleware(jwtManager), userHandler.UpdateUserProfile)
 			userRoutes.GET("/nearby", authMiddleware(jwtManager), userHandler.GetNearbyUsers)
+			userRoutes.GET("/by-city", authMiddleware(jwtManager), userHandler.GetUsersByCity)
 			userRoutes.POST("/like/:id", authMiddleware(jwtManager), userHandler.LikeUser)
 		}
 

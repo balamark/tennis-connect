@@ -20,6 +20,7 @@ help:
 	@echo "  migrate-create - Create new migration (name=migration_name)"
 	@echo "  db-setup       - Set up development database"
 	@echo "  db-reset       - Reset development database"
+
 	@echo "  docker-build   - Build Docker image"
 	@echo "  docker-run     - Run Docker container"
 	@echo "  clean          - Clean build files"
@@ -174,6 +175,7 @@ clean-test-users:
 	@echo "Connecting to database and removing test users..."
 	@docker exec -i $$(docker-compose -f ../docker-compose.yml ps -q db) psql -U $${DB_USER:-postgres} -d $${DB_NAME:-tennis_connect} < scripts/clean-test-users.sql
 	@echo "Test users cleaned successfully!"
+
 
 # Docker operations
 .PHONY: docker-build

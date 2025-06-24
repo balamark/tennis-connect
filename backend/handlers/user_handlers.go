@@ -21,6 +21,7 @@ type UserRepositoryInterface interface {
 	Update(ctx context.Context, user *models.User) error
 	GetNearbyUsers(ctx context.Context, latitude, longitude, radius float64, filters map[string]interface{}) ([]*models.User, error)
 	VerifyPassword(ctx context.Context, email, password string) (bool, *models.User, error)
+	GetUsersByCity(ctx context.Context, city string, filters map[string]interface{}) ([]*models.User, error)
 }
 
 // UserHandler handles user-related HTTP requests
@@ -216,6 +217,22 @@ func (h *UserHandler) UpdateUserProfile(c *gin.Context) {
 	// Ensure the user ID in the path matches the authenticated user
 	user.ID = userID
 
+	// If city is provided but coordinates are missing or zero, try to geocode
+	if user.Location.City != "" && (user.Location.Latitude == 0 && user.Location.Longitude == 0) {
+		fmt.Printf("Geocoding city: %s\n", user.Location.City)
+		
+		geocodeResult, err := utils.GeocodeWithFallback(user.Location.City)
+		if err != nil {
+			fmt.Printf("Geocoding failed for city %s: %v\n", user.Location.City, err)
+			// Continue with the update even if geocoding fails
+		} else {
+			fmt.Printf("Geocoding successful: %s -> (%.6f, %.6f)\n", 
+				user.Location.City, geocodeResult.Latitude, geocodeResult.Longitude)
+			user.Location.Latitude = geocodeResult.Latitude
+			user.Location.Longitude = geocodeResult.Longitude
+		}
+	}
+
 	ctx := context.Background()
 	err = h.userRepo.Update(ctx, &user)
 	if err != nil {
@@ -403,4 +420,76 @@ func LikeUser(c *gin.Context) {
 	// This is a wrapper for the new handler structure
 	// It would be used during transition to the new architecture
 	c.JSON(http.StatusNotImplemented, gin.H{"error": "Not implemented. Use the new handler structure."})
+}
+
+// GetUsersByCity gets users from a specific city
+func (h *UserHandler) GetUsersByCity(c *gin.Context) {
+	// Get user ID from auth context
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	userID, err := uuid.Parse(userIDValue.(string))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	// Get city from query parameters
+	city := c.Query("city")
+	if city == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "City parameter is required"})
+		return
+	}
+
+	// Parse optional filters
+	filters := make(map[string]interface{})
+	filters["userID"] = userID
+
+	if skillLevel := c.Query("skill_level"); skillLevel != "" {
+		if level, err := strconv.ParseFloat(skillLevel, 32); err == nil {
+			filters["skillLevel"] = float32(level)
+		}
+	}
+
+	if gender := c.Query("gender"); gender != "" {
+		filters["gender"] = gender
+	}
+
+	if isNewcomer := c.Query("is_newcomer"); isNewcomer == "true" {
+		filters["isNewcomer"] = true
+	}
+
+	if gameStyles := c.Query("game_styles"); gameStyles != "" {
+		filters["gameStyles"] = strings.Split(gameStyles, ",")
+	}
+
+	ctx := context.Background()
+	users, err := h.userRepo.GetUsersByCity(ctx, city, filters)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get users: " + err.Error()})
+		return
+	}
+
+	if len(users) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": fmt.Sprintf("No users found in %s", city),
+			"users": []interface{}{},
+		})
+		return
+	}
+
+	// Prepare metadata
+	metadata := gin.H{
+		"total_users":   len(users),
+		"city":          city,
+		"search_radius": 1000, // Large radius for city search
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"users":    users,
+		"metadata": metadata,
+	})
 }

@@ -305,14 +305,19 @@ func (r *UserRepository) Update(ctx context.Context, user *models.User) error {
 
 // GetNearbyUsers finds users near the given location
 func (r *UserRepository) GetNearbyUsers(ctx context.Context, latitude, longitude float64, radius float64, filters map[string]interface{}) ([]*models.User, error) {
-	// Base query with spatial proximity calculation
-	// This uses a basic Euclidean distance calculation
-	// For production systems, consider using PostGIS for more accurate distance calculations
+	// Base query using Haversine formula for accurate distance calculation
+	// This calculates the great-circle distance between two points on Earth
 	query := `
 		SELECT id, 
-			   SQRT(POWER(latitude - $1, 2) + POWER(longitude - $2, 2)) AS distance
+			   (3959 * acos(cos(radians($1)) * cos(radians(latitude)) * 
+			   cos(radians(longitude) - radians($2)) + sin(radians($1)) * 
+			   sin(radians(latitude)))) AS distance_miles
 		FROM users
 		WHERE id != $3 -- Exclude the requesting user
+		AND latitude IS NOT NULL 
+		AND longitude IS NOT NULL
+		AND latitude != 0 
+		AND longitude != 0
 	`
 
 	args := []interface{}{latitude, longitude, filters["userID"]}
@@ -336,7 +341,7 @@ func (r *UserRepository) GetNearbyUsers(ctx context.Context, latitude, longitude
 	}
 
 	// Order by distance and apply limit
-	query += " ORDER BY distance ASC LIMIT 50"
+	query += " ORDER BY distance_miles ASC LIMIT 50"
 
 	// Execute query
 	rows, err := r.db.QueryContext(ctx, query, args...)
@@ -356,14 +361,10 @@ func (r *UserRepository) GetNearbyUsers(ctx context.Context, latitude, longitude
 
 	for rows.Next() {
 		var userID uuid.UUID
-		var distance float64
-		if err := rows.Scan(&userID, &distance); err != nil {
+		var distanceMiles float64
+		if err := rows.Scan(&userID, &distanceMiles); err != nil {
 			return nil, fmt.Errorf("failed to scan user row: %w", err)
 		}
-
-		// Convert distance to miles if needed (this is a simplified calculation)
-		// In production, use proper geospatial calculations
-		distanceMiles := distance * 69.0 // Rough conversion from degrees to miles
 
 		userDist := userWithDistance{ID: userID, Distance: distanceMiles}
 		allUsers = append(allUsers, userDist)
@@ -470,4 +471,87 @@ func (r *UserRepository) VerifyPassword(ctx context.Context, email, password str
 	}
 
 	return true, user, nil
+}
+
+// GetUsersByCity finds users in a specific city
+func (r *UserRepository) GetUsersByCity(ctx context.Context, city string, filters map[string]interface{}) ([]*models.User, error) {
+	// Base query to find users in the specified city
+	query := `
+		SELECT id
+		FROM users
+		WHERE LOWER(city) = LOWER($1) AND id != $2
+	`
+
+	args := []interface{}{city, filters["userID"]}
+	argCount := 3 // Start counting from 3 (we've used 2 args already)
+
+	// Apply filters
+	if skillLevel, ok := filters["skillLevel"].(float32); ok {
+		query += fmt.Sprintf(" AND ABS(skill_level - $%d) <= 0.5", argCount)
+		args = append(args, skillLevel)
+		argCount++
+	}
+
+	if gender, ok := filters["gender"].(string); ok && gender != "" {
+		query += fmt.Sprintf(" AND gender = $%d", argCount)
+		args = append(args, gender)
+		argCount++
+	}
+
+	if isNewcomer, ok := filters["isNewcomer"].(bool); ok && isNewcomer {
+		query += " AND is_new_to_area = TRUE"
+	}
+
+	// Order by name and apply limit
+	query += " ORDER BY name ASC LIMIT 50"
+
+	// Execute query
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query users by city: %w", err)
+	}
+	defer rows.Close()
+
+	var userIDs []uuid.UUID
+	for rows.Next() {
+		var userID uuid.UUID
+		if err := rows.Scan(&userID); err != nil {
+			return nil, fmt.Errorf("failed to scan user ID: %w", err)
+		}
+		userIDs = append(userIDs, userID)
+	}
+
+	// Fetch full user details for found users
+	users := make([]*models.User, 0, len(userIDs))
+	for _, userID := range userIDs {
+		user, err := r.GetByID(ctx, userID)
+		if err != nil {
+			continue // Skip failed fetches
+		}
+
+		// Additional filtering for game styles if needed
+		if gameStyles, ok := filters["gameStyles"].([]string); ok && len(gameStyles) > 0 {
+			matches := false
+			for _, filterStyle := range gameStyles {
+				for _, userStyle := range user.GameStyles {
+					if filterStyle == userStyle {
+						matches = true
+						break
+					}
+				}
+				if matches {
+					break
+				}
+			}
+			if !matches {
+				continue
+			}
+		}
+
+		// Set distance to 0 for city searches (since they're all in the same city)
+		user.Distance = 0
+		users = append(users, user)
+	}
+
+	return users, nil
 }

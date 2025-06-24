@@ -9,6 +9,19 @@ const Profile = () => {
   const [error, setError] = useState('');
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  
+  // Common cities for easy selection with flags
+  const commonCities = [
+    { name: 'Taipei', flag: '🇹🇼' },
+    { name: 'Taitung', flag: '🇹🇼' },
+    { name: 'Luye', flag: '🇹🇼' },
+    { name: 'Paris', flag: '🇫🇷' },
+    { name: 'Frankfurt', flag: '🇩🇪' },
+    { name: 'Queenstown', flag: '🇳🇿' },
+    { name: 'Auckland', flag: '🇳🇿' }
+  ];
   
   // Modal state
   const [modalState, setModalState] = useState({
@@ -119,6 +132,90 @@ const Profile = () => {
       setFormData(prev => ({ ...prev, [name]: checked }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  // Handle city selection from suggestions
+  const handleCitySelect = (city) => {
+    setFormData(prev => ({
+      ...prev,
+      location: {
+        ...prev.location,
+        city,
+        // Clear coordinates so backend will geocode the new city
+        latitude: 0,
+        longitude: 0
+      }
+    }));
+    setShowCitySuggestions(false);
+  };
+  
+  // Handle manual city input changes
+  const handleCityChange = (e) => {
+    const city = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      location: {
+        ...prev.location,
+        city,
+        // Clear coordinates when city changes manually so backend will geocode
+        latitude: city !== prev.location.city ? 0 : prev.location.latitude,
+        longitude: city !== prev.location.city ? 0 : prev.location.longitude
+      }
+    }));
+  };
+  
+  // Get user's current location
+  const getCurrentLocation = () => {
+    setLocationLoading(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setFormData(prev => ({
+            ...prev,
+            location: {
+              ...prev.location,
+              latitude,
+              longitude
+            }
+          }));
+          // Try to get city name from coordinates using reverse geocoding
+          fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.city || data.locality) {
+                setFormData(prev => ({
+                  ...prev,
+                  location: {
+                    ...prev.location,
+                    city: data.city || data.locality
+                  }
+                }));
+              }
+            })
+            .catch(err => console.error('Reverse geocoding failed:', err));
+          setLocationLoading(false);
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          setModalState({
+            isOpen: true,
+            type: 'error',
+            title: 'Location Error',
+            message: 'Unable to get your location. Please enter your city manually.'
+          });
+          setLocationLoading(false);
+        }
+      );
+    } else {
+      setModalState({
+        isOpen: true,
+        type: 'error',
+        title: 'Location Not Supported',
+        message: 'Geolocation is not supported by this browser.'
+      });
+      setLocationLoading(false);
     }
   };
 
@@ -339,6 +436,32 @@ const Profile = () => {
               </div>
             )}
           </div>
+
+          {/* Quick City Explorer */}
+          <div className="profile-city-explorer">
+            <h2>🌍 Explore Tennis Players in Other Cities</h2>
+            <p className="explorer-description">
+              Discover tennis communities in popular cities around the world
+            </p>
+            <div className="city-explorer-buttons">
+              {commonCities.filter(city => city.name !== profile.location?.city).map(city => (
+                <button
+                  key={city.name}
+                  className="city-explorer-button"
+                  onClick={() => {
+                    // Navigate to nearby players with city filter
+                    window.location.href = `/nearby-players?explore=${encodeURIComponent(city.name)}`;
+                  }}
+                >
+                  <span className="city-name">{city.name}</span>
+                  <span className="city-icon">{city.flag}</span>
+                </button>
+              ))}
+            </div>
+            <div className="explorer-hint">
+              💡 Click any city to see tennis players there
+            </div>
+          </div>
         </div>
       ) : (
         <div className="profile-form-container">
@@ -370,9 +493,60 @@ const Profile = () => {
                 />
               </div>
               
+              {/* City Field - Required for finding nearby players */}
+              <div className="form-group">
+                <label htmlFor="location.city">
+                  City <span className="required">*</span>
+                  <small className="field-hint">Used to find nearby tennis players</small>
+                </label>
+                <div className="city-input-container">
+                  <input
+                    type="text"
+                    id="location.city"
+                    name="location.city"
+                    value={formData.location.city}
+                    onChange={handleCityChange}
+                    onFocus={() => setShowCitySuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowCitySuggestions(false), 200)}
+                    placeholder="Enter your city"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="location-button"
+                    onClick={getCurrentLocation}
+                    disabled={locationLoading}
+                    title="Use current location"
+                  >
+                    {locationLoading ? '📍' : '🎯'}
+                  </button>
+                </div>
+                
+                {/* City Suggestions */}
+                {showCitySuggestions && (
+                  <div className="city-suggestions">
+                    <div className="suggestions-header">Popular cities:</div>
+                    {commonCities.map(city => (
+                      <button
+                        key={city.name}
+                        type="button"
+                        className="city-suggestion"
+                        onClick={() => handleCitySelect(city.name)}
+                      >
+                        {city.flag} {city.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                
+                <small className="form-text text-muted">
+                  💡 Your city helps us connect you with nearby players. You can use the location button to auto-detect.
+                </small>
+              </div>
+              
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="location.zipCode">Zip Code</label>
+                  <label htmlFor="location.zipCode">Zip Code (optional)</label>
                   <input
                     type="text"
                     id="location.zipCode"
@@ -383,26 +557,13 @@ const Profile = () => {
                 </div>
                 
                 <div className="form-group">
-                  <label htmlFor="location.city">City</label>
-                  <input
-                    type="text"
-                    id="location.city"
-                    name="location.city"
-                    value={formData.location.city}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label htmlFor="location.state">State</label>
+                  <label htmlFor="location.state">State (optional)</label>
                   <input
                     type="text"
                     id="location.state"
                     name="location.state"
                     value={formData.location.state}
                     onChange={handleChange}
-                    required
                   />
                 </div>
               </div>

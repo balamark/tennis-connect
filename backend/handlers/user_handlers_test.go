@@ -64,6 +64,14 @@ func (m *MockUserRepository) VerifyPassword(ctx context.Context, email, password
 	return args.Bool(0), args.Get(1).(*models.User), args.Error(2)
 }
 
+func (m *MockUserRepository) GetUsersByCity(ctx context.Context, city string, filters map[string]interface{}) ([]*models.User, error) {
+	args := m.Called(ctx, city, filters)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*models.User), args.Error(1)
+}
+
 // setupTestRouter sets up a test router with the given handler
 func setupTestRouter(userHandler *UserHandler) *gin.Engine {
 	gin.SetMode(gin.TestMode)
