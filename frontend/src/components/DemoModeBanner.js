@@ -1,7 +1,9 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDemoMode } from '../contexts/DemoModeContext';
 
 const DemoModeBanner = () => {
+  const { t } = useTranslation();
   const { isDemoMode } = useDemoMode();
 
   if (!isDemoMode) return null;
@@ -13,11 +15,8 @@ const DemoModeBanner = () => {
           <span className="text-white text-xs">i</span>
         </div>
         <p className="text-sm font-medium">
-          Demo Mode Active
+          {t('demo.banner')}
         </p>
-        <span className="text-sm text-blue-600">
-          You're viewing sample data to explore the app's features.
-        </span>
       </div>
     </div>
   );

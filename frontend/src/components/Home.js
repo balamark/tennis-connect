@@ -1,51 +1,53 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import './Home.css';
 
 const Home = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const features = [
     {
       icon: '🎾',
-      title: 'Find Tennis Partners',
-      description: 'Connect with players near you based on skill level, location, and playing style.',
-      action: 'Find Players',
+      title: t('home.features.findPartners.title'),
+      description: t('home.features.findPartners.description'),
+      action: t('home.features.findPartners.action'),
       path: '/nearby-players'
     },
     {
       icon: '🏟️',
-      title: 'Book Courts',
-      description: 'Reserve tennis courts at your favorite locations with our easy booking system.',
-      action: 'Book Courts',
+      title: t('home.features.bookCourts.title'),
+      description: t('home.features.bookCourts.description'),
+      action: t('home.features.bookCourts.action'),
       path: '/book-court'
     },
     {
       icon: '📋',
-      title: 'Play Bulletin',
-      description: 'Post or respond to play requests from other tennis enthusiasts in your area.',
-      action: 'View Bulletin',
+      title: t('home.features.playBulletin.title'),
+      description: t('home.features.playBulletin.description'),
+      action: t('home.features.playBulletin.action'),
       path: '/play-bulletin'
     },
     {
       icon: '🏆',
-      title: 'Join Events',
-      description: 'Participate in tournaments, clinics, and social tennis events near you.',
-      action: 'Browse Events',
+      title: t('home.features.joinEvents.title'),
+      description: t('home.features.joinEvents.description'),
+      action: t('home.features.joinEvents.action'),
       path: '/events'
     },
     {
       icon: '👥',
-      title: 'Tennis Communities',
-      description: 'Join local tennis communities and connect with like-minded players.',
-      action: 'Join Communities',
+      title: t('home.features.communities.title'),
+      description: t('home.features.communities.description'),
+      action: t('home.features.communities.action'),
       path: '/communities'
     },
     {
       icon: '📍',
-      title: 'Court Finder',
-      description: 'Discover tennis courts in your area with detailed information and amenities.',
-      action: 'Find Courts',
+      title: t('home.features.courtFinder.title'),
+      description: t('home.features.courtFinder.description'),
+      action: t('home.features.courtFinder.action'),
       path: '/court-finder'
     }
   ];
@@ -59,29 +61,29 @@ const Home = () => {
       {/* Hero Section */}
       <section className="hero-section">
         <div className="hero-content">
-          <h1>Welcome to MatchPoint</h1>
+          <h1>{t('home.welcome')}</h1>
           <p className="hero-subtitle">
-            Your ultimate platform for connecting with tennis players, booking courts, and joining the tennis community.
+            {t('home.subtitle')}
           </p>
           <div className="hero-stats">
             <div className="stat-item">
               <span className="stat-number">1,000+</span>
-              <span className="stat-label">Active Players</span>
+              <span className="stat-label">{t('home.stats.activePlayers')}</span>
             </div>
             <div className="stat-item">
               <span className="stat-number">50+</span>
-              <span className="stat-label">Tennis Courts</span>
+              <span className="stat-label">{t('home.stats.tennisCourts')}</span>
             </div>
             <div className="stat-item">
               <span className="stat-number">200+</span>
-              <span className="stat-label">Matches Made</span>
+              <span className="stat-label">{t('home.stats.matchesMade')}</span>
             </div>
           </div>
           <button 
             className="cta-button"
             onClick={() => navigate('/nearby-players')}
           >
-            Start Playing Today
+            {t('home.cta')}
           </button>
         </div>
         <div className="hero-visual">
@@ -99,27 +101,27 @@ const Home = () => {
 
       {/* How It Works Section */}
       <section className="how-it-works">
-        <h2>How MatchPoint Works</h2>
+        <h2>{t('home.howItWorks.title')}</h2>
         <div className="steps-container">
           <div className="step">
             <div className="step-number">1</div>
             <div className="step-content">
-              <h3>Create Your Profile</h3>
-              <p>Set up your tennis profile with skill level, preferred playing times, and game styles.</p>
+              <h3>{t('home.howItWorks.step1.title')}</h3>
+              <p>{t('home.howItWorks.step1.description')}</p>
             </div>
           </div>
           <div className="step">
             <div className="step-number">2</div>
             <div className="step-content">
-              <h3>Find Players & Courts</h3>
-              <p>Discover tennis partners near you and book courts at your favorite locations.</p>
+              <h3>{t('home.howItWorks.step2.title')}</h3>
+              <p>{t('home.howItWorks.step2.description')}</p>
             </div>
           </div>
           <div className="step">
             <div className="step-number">3</div>
             <div className="step-content">
-              <h3>Play & Connect</h3>
-              <p>Meet up for matches, join events, and become part of the tennis community.</p>
+              <h3>{t('home.howItWorks.step3.title')}</h3>
+              <p>{t('home.howItWorks.step3.description')}</p>
             </div>
           </div>
         </div>
@@ -127,7 +129,7 @@ const Home = () => {
 
       {/* Features Grid */}
       <section className="features-section">
-        <h2>Explore All Features</h2>
+        <h2>{t('home.features.title')}</h2>
         <div className="features-grid">
           {features.map((feature, index) => (
             <div key={index} className="feature-card">

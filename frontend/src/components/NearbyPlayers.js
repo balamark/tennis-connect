@@ -4,10 +4,12 @@ import { useDemoMode } from '../contexts/DemoModeContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import { getMockPlayers } from '../data/mockData';
 import Modal from './Modal';
+import { useTranslation } from 'react-i18next';
 
 const NearbyPlayers = () => {
   const { isDemoMode, enableDemoMode } = useDemoMode();
   const { addNotification } = useNotifications();
+  const { t } = useTranslation();
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -795,13 +797,13 @@ Good luck with your tennis match! 🎾
 
         {/* NTRP Rating Filter */}
         <div className="filter-group" data-filter="skill">
-          <label>NTRP Rating</label>
+          <label>{t('nearbyPlayers.filters.skillLevel')}</label>
           <select
             name="skillLevel"
             value={filters.skillLevel}
             onChange={handleFilterChange}
           >
-            <option value="">Any Level</option>
+            <option value="">{t('nearbyPlayers.filters.anyLevel')}</option>
             <option value="2.0">2.0</option>
             <option value="2.5">2.5</option>
             <option value="3.0">3.0</option>
@@ -815,7 +817,7 @@ Good luck with your tennis match! 🎾
 
         {/* Search Radius Filter */}
         <div className="filter-group" data-filter="radius">
-          <label>Search Radius</label>
+          <label>{t('nearbyPlayers.filters.searchRadius')}</label>
           
           {/* Quick radius selection buttons */}
           <div className="radius-quick-select">
@@ -833,7 +835,7 @@ Good luck with your tennis match! 🎾
           
           {/* Advanced radius control */}
           <details className="radius-advanced">
-            <summary>Custom distance</summary>
+            <summary>{t('nearbyPlayers.filters.customDistance')}</summary>
             <div className="radius-slider-container">
               <input
                 type="range"
@@ -852,17 +854,17 @@ Good luck with your tennis match! 🎾
           </details>
           
           <div className="radius-hint">
-            💡 Larger radius shows more players but longer travel distances
+            {t('nearbyPlayers.filters.radiusHint')}
           </div>
         </div>
 
         {/* Game Style Filter - Multi-select dropdown */}
         <div className="filter-group" data-filter="styles">
-          <label>Style</label>
+          <label>{t('nearbyPlayers.filters.style')}</label>
           <div className={`multi-select-dropdown ${stylesDropdownOpen ? 'open' : ''}`}>
             <div className="multi-select-trigger" onClick={handleStylesDropdownToggle}>
               <span className={`selected-items-display ${filters.gameStyles.length > 0 ? 'has-selections' : ''}`}>
-                {getSelectedItemsDisplay(filters.gameStyles, 'Select styles')}
+                {getSelectedItemsDisplay(filters.gameStyles, t('nearbyPlayers.filters.selectStyles'))}
               </span>
             </div>
             {stylesDropdownOpen && (
@@ -873,7 +875,7 @@ Good luck with your tennis match! 🎾
                     className={`multi-select-option ${filters.gameStyles.includes(style) ? 'selected' : ''}`}
                     onClick={(e) => handleStyleOptionClick(e, style)}
                   >
-                    {style}
+                    {t(`nearbyPlayers.gameStyles.${style.toLowerCase()}`)}
                   </div>
                 ))}
               </div>
@@ -883,11 +885,11 @@ Good luck with your tennis match! 🎾
 
         {/* Preferred Days Filter - Multi-select dropdown */}
         <div className="filter-group" data-filter="days">
-          <label>Availability</label>
+          <label>{t('nearbyPlayers.filters.availability')}</label>
           <div className={`multi-select-dropdown ${daysDropdownOpen ? 'open' : ''}`}>
             <div className="multi-select-trigger" onClick={handleDaysDropdownToggle}>
               <span className={`selected-items-display ${filters.preferredDays.length > 0 ? 'has-selections' : ''}`}>
-                {getSelectedItemsDisplay(filters.preferredDays, 'Select days')}
+                {getSelectedItemsDisplay(filters.preferredDays, t('nearbyPlayers.filters.selectDays'))}
               </span>
             </div>
             {daysDropdownOpen && (
@@ -898,7 +900,7 @@ Good luck with your tennis match! 🎾
                     className={`multi-select-option ${filters.preferredDays.includes(day) ? 'selected' : ''}`}
                     onClick={(e) => handleDayOptionClick(e, day)}
                   >
-                    {day}
+                    {t(`nearbyPlayers.weekdays.${day.toLowerCase()}`)}
                   </div>
                 ))}
               </div>
@@ -908,16 +910,16 @@ Good luck with your tennis match! 🎾
 
         {/* Gender Preference Filter */}
         <div className="filter-group" data-filter="gender">
-          <label>Gender Preference</label>
+          <label>{t('nearbyPlayers.filters.genderPreference')}</label>
           <select
             name="gender"
             value={filters.gender}
             onChange={handleFilterChange}
           >
-            <option value="">Any</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
+            <option value="">{t('nearbyPlayers.filters.any')}</option>
+            <option value="Male">{t('nearbyPlayers.filters.male')}</option>
+            <option value="Female">{t('nearbyPlayers.filters.female')}</option>
+            <option value="Other">{t('nearbyPlayers.filters.other')}</option>
           </select>
         </div>
 
@@ -930,19 +932,19 @@ Good luck with your tennis match! 🎾
               checked={filters.isNewcomer}
               onChange={handleFilterChange}
             />
-            <span className="checkbox-text">New to Area Only</span>
+            <span className="checkbox-text">{t('nearbyPlayers.filters.newToAreaOnly')}</span>
           </label>
         </div>
 
         <button className="apply-filters-button" onClick={handleApplyFilters}>
-          Apply Filters
+          {t('nearbyPlayers.filters.applyFilters')}
         </button>
         
         {/* Suggested Cities Section */}
         <div className="suggested-cities-section">
-          <h3>🌍 Explore Other Cities</h3>
+          <h3>{t('nearbyPlayers.exploreOtherCities')}</h3>
           <p className="section-description">
-            View tennis players from popular cities around the world
+            {t('nearbyPlayers.exploreCitiesDescription')}
           </p>
           <div className="city-buttons-grid">
             {commonCities.map(city => (
@@ -958,7 +960,7 @@ Good luck with your tennis match! 🎾
             ))}
           </div>
           <div className="explore-hint">
-            💡 Click any city to see tennis players there
+            {t('nearbyPlayers.exploreHint')}
           </div>
         </div>
       </div>
@@ -967,20 +969,20 @@ Good luck with your tennis match! 🎾
       <div className="main-content">
         <div className="content-header">
           <div className="results-count">
-            {players.length} player{players.length !== 1 ? 's' : ''} found
+            {t('nearbyPlayers.playersFound', { count: players.length })}
           </div>
           <div className="view-toggle">
             <button 
               className={`view-button ${viewMode === 'detailed' ? 'active' : ''}`}
               onClick={() => setViewMode('detailed')}
             >
-              Detailed
+              {t('nearbyPlayers.viewModes.detailed')}
             </button>
             <button 
               className={`view-button ${viewMode === 'compact' ? 'active' : ''}`}
               onClick={() => setViewMode('compact')}
             >
-              Compact
+              {t('nearbyPlayers.viewModes.compact')}
             </button>
           </div>
         </div>
@@ -1011,25 +1013,31 @@ Good luck with your tennis match! 🎾
                     }
                   }}
                 >
-                  ← Back to Nearby Players
+                  {t('nearbyPlayers.backToNearby')}
                 </button>
               </div>
             )}
             {searchMetadata.showing_fallback && !searchMetadata.city_search && (
               <div className="fallback-notice">
-                No players found within {searchMetadata.search_radius} miles. 
-                Showing {searchMetadata.users_out_of_range} players from nearby areas.
+                {t('nearbyPlayers.noPlayersInRadius', { radius: searchMetadata.search_radius })}
+                {t('nearbyPlayers.foundInRegion', { count: searchMetadata.users_out_of_range })}
               </div>
             )}
             {!searchMetadata.city_search && (
               <div className="range-info">
-                {searchMetadata.users_in_range} players within {searchMetadata.search_radius} miles, 
-                {searchMetadata.users_out_of_range} players outside range
+                {t('nearbyPlayers.playersWithin', { 
+                  inRange: searchMetadata.users_in_range, 
+                  radius: searchMetadata.search_radius,
+                  outRange: searchMetadata.users_out_of_range 
+                })}
               </div>
             )}
             {searchMetadata.city_search && (
               <div className="range-info">
-                Found {searchMetadata.total_users} players in {searchMetadata.showing_city}
+                {t('nearbyPlayers.playersInCity', { 
+                  count: searchMetadata.total_users, 
+                  city: searchMetadata.showing_city 
+                })}
               </div>
             )}
           </div>
@@ -1039,7 +1047,7 @@ Good luck with your tennis match! 🎾
         {loading ? (
           <div className="loading">
             <div className="loading-spinner"></div>
-            <p>Finding players near you...</p>
+            <p>{t('nearbyPlayers.loading')}</p>
           </div>
         ) : error ? (
           <div className="error">
@@ -1049,21 +1057,21 @@ Good luck with your tennis match! 🎾
           <div className="no-players">
             <div style={{ textAlign: 'center', padding: '40px 20px' }}>
               <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎾</div>
-              <h3 style={{ color: '#1976d2', marginBottom: '12px' }}>No Players Found</h3>
+              <h3 style={{ color: '#1976d2', marginBottom: '12px' }}>{t('nearbyPlayers.noPlayersFound')}</h3>
               <p style={{ color: '#6b7280', marginBottom: '16px' }}>
                 {!isDemoMode 
-                  ? "No tennis players found in your area yet. This community is growing!"
-                  : "Try adjusting your filters to see more players."
+                  ? t('nearbyPlayers.noPlayersFoundMessage')
+                  : t('nearbyPlayers.noPlayersFoundMessageDemo')
                 }
               </p>
               {!isDemoMode && (
                 <div style={{ background: '#f8f9fa', borderRadius: '8px', padding: '16px', margin: '16px 0', fontSize: '14px' }}>
-                  <p><strong>💡 Tips to find players:</strong></p>
+                  <p><strong>{t('nearbyPlayers.tips.title')}</strong></p>
                   <ul style={{ textAlign: 'left', margin: '8px 0', paddingLeft: '20px' }}>
-                    <li>Try increasing your search radius</li>
-                    <li>Remove skill level or other filters</li>
-                    <li>Check back later as more players join</li>
-                    <li>Invite friends to create profiles</li>
+                    <li>{t('nearbyPlayers.tips.increaseRadius')}</li>
+                    <li>{t('nearbyPlayers.tips.removeFilters')}</li>
+                    <li>{t('nearbyPlayers.tips.checkBackLater')}</li>
+                    <li>{t('nearbyPlayers.tips.inviteFriends')}</li>
                   </ul>
                 </div>
               )}
@@ -1084,14 +1092,14 @@ Good luck with your tennis match! 🎾
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                   <span style={{ fontSize: '20px' }}>📍</span>
-                  <strong>Expanded Search Active</strong>
+                  <strong>{t('nearbyPlayers.expandedSearch')}</strong>
                 </div>
                 <div style={{ lineHeight: '1.5' }}>
-                  No players found within {searchMetadata.original_search_radius} miles of your location.
+                  {t('nearbyPlayers.noPlayersInRadius', { radius: searchMetadata.original_search_radius })}
                   <br />
-                  <strong>Expanded to {searchMetadata.actual_search_radius} miles</strong> - found {searchMetadata.total_users} players in your region!
+                  <strong>{t('nearbyPlayers.expandedTo', { radius: searchMetadata.actual_search_radius })}</strong> - {t('nearbyPlayers.foundInRegion', { count: searchMetadata.total_users })}
                   <br />
-                  <em style={{ color: '#7B1FA2' }}>💡 Like players to start connecting and find your perfect tennis partner</em>
+                  <em style={{ color: '#7B1FA2' }}>{t('nearbyPlayers.likeToConnect')}</em>
                 </div>
               </div>
             )}
@@ -1101,7 +1109,7 @@ Good luck with your tennis match! 🎾
                 <div key={player.id} className="player-card">
                   {!isDemoMode && (
                     <div className={`distance-badge ${player.distance && player.distance <= filters.radius ? 'in-range' : 'out-of-range'}`}>
-                      {player.distance ? `${player.distance} mi` : 'Distance N/A'}
+                      {player.distance ? t('nearbyPlayers.playerCard.milesAway', { distance: player.distance }) : t('nearbyPlayers.playerCard.distanceNA')}
                     </div>
                   )}
                   
@@ -1124,15 +1132,15 @@ Good luck with your tennis match! 🎾
                   <div className="player-info">
                     <h3 className="player-name">{player.name}</h3>
                     <div className="player-details">
-                      <span className="location">{player.location?.city || 'Location not specified'}</span>
+                      <span className="location">{player.location?.city || t('nearbyPlayers.playerCard.locationNotSpecified')}</span>
                       {!isDemoMode && player.distance && (
-                        <span className="distance">{player.distance} miles away</span>
+                        <span className="distance">{t('nearbyPlayers.playerCard.milesAway', { distance: player.distance })}</span>
                       )}
                       <span className="game-styles">
-                        {player.gameStyles?.join(', ') || 'Any style'}
+                        {player.gameStyles?.join(', ') || t('nearbyPlayers.playerCard.anyStyle')}
                       </span>
                       {player.isNewToArea && (
-                        <span className="newcomer-badge">New to Area</span>
+                        <span className="newcomer-badge">{t('nearbyPlayers.playerCard.newToArea')}</span>
                       )}
                     </div>
                     {player.bio && (
@@ -1144,13 +1152,13 @@ Good luck with your tennis match! 🎾
                     {matches.some(match => match.playerId === player.id) ? (
                       <div className="match-actions">
                         <div className="match-indicator">
-                          ⭐ It's a Match!
+                          {t('nearbyPlayers.playerCard.itsAMatch')}
                         </div>
                         <button 
                           className="view-contact-button"
                           onClick={() => viewPlayerContact(player.id)}
                         >
-                          💬 Contact Info
+                          {t('nearbyPlayers.playerCard.contactInfo')}
                         </button>
                       </div>
                     ) : (
@@ -1159,13 +1167,13 @@ Good luck with your tennis match! 🎾
                         onClick={() => handleLikePlayer(player.id)}
                         disabled={!isDemoMode && !localStorage.getItem('token')}
                       >
-                        {likedPlayers.has(player.id) ? '💚 Liked' : '👍 Like'}
+                        {likedPlayers.has(player.id) ? t('nearbyPlayers.playerCard.liked') : t('nearbyPlayers.playerCard.like')}
                       </button>
                     )}
                     
                     {likedPlayers.has(player.id) && !matches.some(match => match.playerId === player.id) && (
                       <div className="like-status">
-                        Waiting for response...
+                        {t('nearbyPlayers.playerCard.waitingForResponse')}
                       </div>
                     )}
                   </div>

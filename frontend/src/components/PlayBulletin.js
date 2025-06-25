@@ -5,10 +5,12 @@ import { useNotifications } from '../contexts/NotificationContext';
 import { getMockBulletins } from '../data/mockData';
 import Modal from './Modal';
 import './PlayBulletin.css';
+import { useTranslation } from 'react-i18next';
 
 const PlayBulletin = () => {
   const { isDemoMode } = useDemoMode();
   const { addNotification } = useNotifications();
+  const { t } = useTranslation();
   const [bulletins, setBulletins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -576,7 +578,7 @@ Looking forward to playing with you!`;
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">
-        <div className="text-[#0d141c] text-lg">Loading bulletins...</div>
+        <div className="text-[#0d141c] text-lg">{t('bulletin.loading')}</div>
       </div>
     );
   }
@@ -588,8 +590,8 @@ Looking forward to playing with you!`;
           <div className="layout-content-container flex flex-col max-w-[960px] flex-1">
             <div className="flex flex-wrap justify-between gap-3 p-4">
               <div className="flex min-w-72 flex-col gap-3">
-                <p className="text-[#0d141c] tracking-light text-[32px] font-bold leading-tight">Play Bulletin Board</p>
-                <p className="text-[#49739c] text-sm font-normal leading-normal">Find a match partner or respond to requests from other players. 🎾</p>
+                <p className="text-[#0d141c] tracking-light text-[32px] font-bold leading-tight">{t('bulletin.title')}</p>
+                <p className="text-[#49739c] text-sm font-normal leading-normal">{t('bulletin.subtitle')}</p>
                 
                 {/* Mock data / Error indicator */}
                 {(showingMockData || (error && !showingMockData)) && (
@@ -610,8 +612,8 @@ Looking forward to playing with you!`;
                     </div>
                     <p className={`${error && !showingMockData ? 'text-red-600' : 'text-blue-600'} text-xs mt-1`}>
                       {error ? 
-                        (showingMockData ? 'Unable to connect to server. Showing sample bulletins to demonstrate the feature.' : error) :
-                        'You\'re viewing sample bulletins. Toggle demo mode off to see real bulletins.'
+                        (showingMockData ? t('bulletin.demo.errorMessage') : error) :
+                        t('bulletin.demo.demoMessage')
                       }
                     </p>
                   </div>
@@ -630,7 +632,7 @@ Looking forward to playing with you!`;
                   onChange={handleFilterChange}
                   className="text-[#0d141c] text-sm font-medium leading-normal bg-transparent border-none outline-none"
                 >
-                  <option value="">Skill Level</option>
+                  <option value="">{t('bulletin.filters.skillLevel')}</option>
                   {skillLevels.map(level => (
                     <option key={level} value={level}>{level} NTRP</option>
                   ))}
@@ -645,9 +647,9 @@ Looking forward to playing with you!`;
                   onChange={handleFilterChange}
                   className="text-[#0d141c] text-sm font-medium leading-normal bg-transparent border-none outline-none"
                 >
-                  <option value="">Game Type</option>
+                  <option value="">{t('bulletin.filters.gameType')}</option>
                   {gameTypeOptions.map(type => (
-                    <option key={type} value={type}>{type}</option>
+                    <option key={type} value={type}>{t(`bulletin.gameTypes.${type.toLowerCase()}`)}</option>
                   ))}
                 </select>
               </div>
@@ -666,7 +668,7 @@ Looking forward to playing with you!`;
               {/* Search Radius Slider */}
               <div className="flex items-center gap-x-3 rounded-xl bg-[#e7edf4] pl-4 pr-4 py-2" title={searchRadius === 999 ? 'Search all bulletins regardless of distance' : `Search within ${searchRadius} miles of your location`}>
                 <label htmlFor="search-radius" className="text-[#0d141c] text-sm font-medium leading-normal whitespace-nowrap min-w-[90px]">
-                  {searchRadius === 999 ? 'All Distances' : `${searchRadius} mi`}
+                  {searchRadius === 999 ? t('bulletin.distance.allDistances') : `${searchRadius} ${t('bulletin.distance.miles')}`}
                 </label>
                 <div className="flex items-center gap-2">
                   <input
@@ -698,7 +700,7 @@ Looking forward to playing with you!`;
                 onClick={handleApplyFilters}
                 className="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-xl bg-[#3d98f4] text-white pl-4 pr-4 hover:bg-[#2d88e4] transition-colors"
               >
-                <span className="text-sm font-medium leading-normal">Apply Filters</span>
+                <span className="text-sm font-medium leading-normal">{t('nearbyPlayers.filters.applyFilters')}</span>
               </button>
             </div>
 

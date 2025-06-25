@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Notifications from './Notifications';
 import { useNotifications } from '../contexts/NotificationContext';
 import DemoModeToggle from './DemoModeToggle';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const Header = ({ isAuthenticated, userName, onLogout }) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -31,13 +34,13 @@ const Header = ({ isAuthenticated, userName, onLogout }) => {
   };
 
   const navigationItems = [
-    { path: '/', label: 'Home' },
-    { path: '/find-partner', label: 'Find a partner' },
-    { path: '/book-court', label: 'Book a court' },
-    { path: '/my-sessions', label: 'My sessions' },
-    { path: '/play-bulletin', label: 'Bulletins' },
-    { path: '/communities', label: 'Communities' },
-    { path: '/events', label: 'Events' },
+    { path: '/', label: t('navigation.home') },
+    { path: '/find-partner', label: t('navigation.findPartner') },
+    { path: '/book-court', label: t('navigation.bookCourt') },
+    { path: '/my-sessions', label: t('navigation.mySessions') },
+    { path: '/play-bulletin', label: t('navigation.bulletins') },
+    { path: '/communities', label: t('navigation.communities') },
+    { path: '/events', label: t('navigation.events') },
   ];
 
   return (
@@ -83,13 +86,16 @@ const Header = ({ isAuthenticated, userName, onLogout }) => {
                 } transition-colors`} 
                 to="/profile"
               >
-                {userName || 'Profile'}
+                {userName || t('navigation.profile')}
               </Link>
             )}
           </nav>
 
           {/* Desktop Auth Section */}
           <div className="flex items-center gap-3">
+            {/* Language Switcher - Always visible */}
+            <LanguageSwitcher />
+            
             {/* Demo Mode Toggle - Always visible */}
             <DemoModeToggle />
             
@@ -133,7 +139,7 @@ const Header = ({ isAuthenticated, userName, onLogout }) => {
                     onClick={onLogout}
                     className="text-sm font-medium text-[#0d141c] hover:text-[#0c7ff2] transition-colors"
                   >
-                    Sign Out
+                    {t('navigation.signOut')}
                   </button>
                 </div>
               </>
@@ -143,13 +149,13 @@ const Header = ({ isAuthenticated, userName, onLogout }) => {
                   to="/login" 
                   className="text-sm font-medium text-[#0d141c] hover:text-[#0c7ff2] transition-colors"
                 >
-                  Sign In
+                  {t('navigation.signIn')}
                 </Link>
                 <Link 
                   to="/register" 
                   className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#0c7ff2] text-slate-50 text-sm font-bold leading-normal tracking-[0.015em] hover:bg-[#0a6fd1] transition-colors"
                 >
-                  Register
+                  {t('navigation.register')}
                 </Link>
               </div>
             )}
@@ -158,6 +164,11 @@ const Header = ({ isAuthenticated, userName, onLogout }) => {
 
         {/* Mobile Menu Button and Auth */}
         <div className="flex lg:hidden items-center gap-3">
+          {/* Language Switcher - Mobile */}
+          <div className="scale-90">
+            <LanguageSwitcher />
+          </div>
+          
           {/* Demo Mode Toggle - Mobile */}
           <DemoModeToggle className="scale-90" />
           
@@ -235,7 +246,7 @@ const Header = ({ isAuthenticated, userName, onLogout }) => {
                   to="/profile"
                   onClick={closeMobileMenu}
                 >
-                  {userName || 'Profile'}
+                  {userName || t('navigation.profile')}
                 </Link>
                 <button 
                   onClick={() => {
@@ -244,7 +255,7 @@ const Header = ({ isAuthenticated, userName, onLogout }) => {
                   }}
                   className="block text-base font-medium text-[#0d141c] hover:text-[#0c7ff2] transition-colors py-2 w-full text-left"
                 >
-                  Sign Out
+                  {t('navigation.signOut')}
                 </button>
               </>
             )}
@@ -255,14 +266,14 @@ const Header = ({ isAuthenticated, userName, onLogout }) => {
                   className="block text-base font-medium text-[#0d141c] hover:text-[#0c7ff2] transition-colors py-2"
                   onClick={closeMobileMenu}
                 >
-                  Sign In
+                  {t('navigation.signIn')}
                 </Link>
                 <Link 
                   to="/register" 
                   className="block w-full text-center mt-3 cursor-pointer overflow-hidden rounded-lg h-12 px-4 bg-[#0c7ff2] text-slate-50 text-base font-bold leading-normal tracking-[0.015em] hover:bg-[#0a6fd1] transition-colors flex items-center justify-center"
                   onClick={closeMobileMenu}
                 >
-                  Register
+                  {t('navigation.register')}
                 </Link>
               </>
             )}
