@@ -1,0 +1,300 @@
+{
+  "app": {
+    "name": "MatchPoint",
+    "tagline": "Tu Plataforma de Tenis Definitiva"
+  },
+  "navigation": {
+    "home": "Inicio",
+    "findPartner": "Encontrar compañero",
+    "bookCourt": "Reservar cancha",
+    "mySessions": "Mis sesiones",
+    "bulletins": "Boletines",
+    "communities": "Comunidades",
+    "events": "Eventos",
+    "profile": "Perfil",
+    "signIn": "Iniciar sesión",
+    "signOut": "Cerrar sesión",
+    "register": "Registrarse"
+  },
+  "home": {
+    "welcome": "Bienvenido a MatchPoint",
+    "subtitle": "Tu plataforma definitiva para conectar con jugadores de tenis, reservar canchas y unirte a la comunidad tenística.",
+    "stats": {
+      "activePlayers": "Jugadores Activos",
+      "tennisCourts": "Canchas de Tenis",
+      "matchesMade": "Partidos Organizados"
+    },
+    "cta": "Comienza a Jugar Hoy",
+    "howItWorks": {
+      "title": "Cómo Funciona MatchPoint",
+      "step1": {
+        "title": "Crea Tu Perfil",
+        "description": "Configura tu perfil de tenis con nivel de habilidad, horarios preferidos de juego y estilos de juego."
+      },
+      "step2": {
+        "title": "Encuentra Jugadores y Canchas",
+        "description": "Descubre compañeros de tenis cerca de ti y reserva canchas en tus ubicaciones favoritas."
+      },
+      "step3": {
+        "title": "Juega y Conéctate",
+        "description": "Reúnete para partidos, únete a eventos y conviértete en parte de la comunidad tenística."
+      }
+    },
+    "features": {
+      "title": "Explora Todas las Funcionalidades",
+      "findPartners": {
+        "title": "Encuentra Compañeros de Tenis",
+        "description": "Conéctate con jugadores cerca de ti basado en nivel de habilidad, ubicación y estilo de juego.",
+        "action": "Encontrar Jugadores"
+      },
+      "bookCourts": {
+        "title": "Reservar Canchas",
+        "description": "Reserva canchas de tenis en tus ubicaciones favoritas con nuestro sistema de reservas fácil.",
+        "action": "Reservar Canchas"
+      },
+      "playBulletin": {
+        "title": "Boletín de Juego",
+        "description": "Publica o responde a solicitudes de juego de otros entusiastas del tenis en tu área.",
+        "action": "Ver Boletín"
+      },
+      "joinEvents": {
+        "title": "Únete a Eventos",
+        "description": "Participa en torneos, clínicas y eventos sociales de tenis cerca de ti.",
+        "action": "Explorar Eventos"
+      },
+      "communities": {
+        "title": "Comunidades de Tenis",
+        "description": "Únete a comunidades locales de tenis y conéctate con jugadores afines.",
+        "action": "Unirse a Comunidades"
+      },
+      "courtFinder": {
+        "title": "Buscador de Canchas",
+        "description": "Descubre canchas de tenis en tu área con información detallada y amenidades.",
+        "action": "Encontrar Canchas"
+      }
+    },
+    "quickStart": {
+      "title": "Guía de Inicio Rápido",
+      "newToTennis": {
+        "title": "¿Nuevo en el Tenis?",
+        "description": "Comienza encontrando jugadores y canchas amigables para principiantes en tu área. Usa nuestros filtros de nivel de habilidad para conectarte con jugadores de tu nivel.",
+        "action": "Encontrar Principiantes"
+      },
+      "quickGame": {
+        "title": "¿Buscas un Juego Rápido?",
+        "description": "Revisa el Boletín de Juego para oportunidades inmediatas de juego o publica tu propia solicitud para un compañero de práctica.",
+        "action": "Juego Rápido"
+      },
+      "competitive": {
+        "title": "¿Jugador Competitivo?",
+        "description": "Únete a torneos y eventos competitivos. Conéctate con jugadores avanzados y participa en juegos de liga.",
+        "action": "Unirse a Torneos"
+      }
+    },
+    "community": {
+      "title": "Únete a Nuestra Comunidad de Tenis",
+      "subtitle": "Conéctate Más Allá de la Cancha",
+      "description": "MatchPoint no se trata solo de encontrar juegos - se trata de construir conexiones duraderas con otros entusiastas del tenis. Únete a comunidades locales, comparte consejos, organiza eventos grupales y sé parte de una red tenística vibrante.",
+      "benefits": {
+        "meetPlayers": "Conoce jugadores de tenis afines",
+        "shareTips": "Comparte consejos y mejora tu juego",
+        "organizeEvents": "Organiza y únete a eventos grupales",
+        "challenges": "Participa en desafíos comunitarios"
+      },
+      "action": "Explorar Comunidades"
+    }
+  },
+  "auth": {
+    "signIn": "Iniciar sesión",
+    "signOut": "Cerrar sesión",
+    "register": "Registrarse",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar contraseña",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "createAccount": "Crear cuenta",
+    "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+    "dontHaveAccount": "¿No tienes una cuenta?",
+    "forgotPassword": "¿Olvidaste tu contraseña?"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Ocurrió un error",
+    "success": "Éxito",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "view": "Ver",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "sort": "Ordenar",
+    "clear": "Limpiar",
+    "submit": "Enviar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "close": "Cerrar"
+  },
+  "language": {
+    "select": "Seleccionar idioma",
+    "current": "Idioma actual",
+    "zh-TW": "繁體中文（台灣）",
+    "en": "English",
+    "fr": "Français",
+    "es": "Español"
+  },
+  "demo": {
+    "banner": "Modo Demo - Algunas funcionalidades pueden estar limitadas",
+    "toggle": "Modo Demo"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "markAllRead": "Marcar todo como leído",
+    "noNotifications": "No hay notificaciones en este momento"
+  },
+  "nearbyPlayers": {
+    "title": "Jugadores Cerca de Ti",
+    "loading": "Encontrando jugadores cerca de ti...",
+    "playersFound": "{{count}} jugador{{count_other}}",
+    "noPlayersFound": "No se Encontraron Jugadores",
+    "noPlayersFoundMessage": "Aún no se han encontrado jugadores de tenis en tu área. ¡Esta comunidad está creciendo!",
+    "noPlayersFoundMessageDemo": "Intenta ajustar tus filtros para ver más jugadores.",
+    "exploreOtherCities": "🌍 Explorar Otras Ciudades",
+    "exploreCitiesDescription": "Ver jugadores de tenis de ciudades populares alrededor del mundo",
+    "exploreHint": "💡 Haz clic en cualquier ciudad para ver jugadores de tenis allí",
+    "backToNearby": "← Volver a Jugadores Cercanos",
+    "expandedSearch": "Búsqueda Expandida Activa",
+    "noPlayersInRadius": "No se encontraron jugadores dentro de {{radius}} millas de tu ubicación.",
+    "expandedTo": "Expandido a {{radius}} millas",
+    "foundInRegion": "¡encontró {{count}} jugadores en tu región!",
+    "likeToConnect": "💡 Dale me gusta a los jugadores para empezar a conectarte y encontrar tu compañero de tenis perfecto",
+    "playersWithin": "{{inRange}} jugadores dentro de {{radius}} millas, {{outRange}} jugadores fuera del rango",
+    "playersInCity": "Se encontraron {{count}} jugadores en {{city}}",
+    "filters": {
+      "skillLevel": "Nivel de Habilidad",
+      "anyLevel": "Cualquier Nivel",
+      "searchRadius": "Radio de Búsqueda",
+      "customDistance": "Distancia personalizada",
+      "radiusHint": "💡 Un radio más amplio muestra más jugadores pero distancias de viaje más largas",
+      "style": "Estilo",
+      "selectStyles": "Seleccionar estilos",
+      "availability": "Disponibilidad",
+      "selectDays": "Seleccionar días",
+      "genderPreference": "Preferencia de Género",
+      "any": "Cualquiera",
+      "male": "Masculino",
+      "female": "Femenino",
+      "other": "Otro",
+      "newToAreaOnly": "Solo Nuevos en el Área",
+      "applyFilters": "Aplicar Filtros"
+    },
+    "gameStyles": {
+      "singles": "Individual",
+      "doubles": "Dobles",
+      "social": "Social",
+      "competitive": "Competitivo"
+    },
+    "weekdays": {
+      "monday": "Lunes",
+      "tuesday": "Martes",
+      "wednesday": "Miércoles",
+      "thursday": "Jueves",
+      "friday": "Viernes",
+      "saturday": "Sábado",
+      "sunday": "Domingo"
+    },
+    "playerCard": {
+      "milesAway": "a {{distance}} millas",
+      "distanceNA": "Distancia N/A",
+      "locationNotSpecified": "Ubicación no especificada",
+      "anyStyle": "Cualquier estilo",
+      "newToArea": "Nuevo en el Área",
+      "itsAMatch": "⭐ ¡Es un Match!",
+      "contactInfo": "💬 Info de Contacto",
+      "like": "👍 Me Gusta",
+      "liked": "💚 Me Gustó",
+      "waitingForResponse": "Esperando respuesta..."
+    },
+    "viewModes": {
+      "detailed": "Detallado",
+      "compact": "Compacto"
+    },
+    "tips": {
+      "title": "💡 Consejos para encontrar jugadores:",
+      "increaseRadius": "Intenta aumentar tu radio de búsqueda",
+      "removeFilters": "Quita el nivel de habilidad u otros filtros",
+      "checkBackLater": "Vuelve más tarde ya que se unen más jugadores",
+      "inviteFriends": "Invita amigos a crear perfiles"
+    }
+  },
+  "bulletin": {
+    "title": "Tablón de Anuncios de Juego",
+    "subtitle": "Encuentra un compañero de partido o responde a solicitudes de otros jugadores. 🎾",
+    "loading": "Cargando boletines...",
+    "createNew": "Publicar Nuevo Boletín",
+    "filters": {
+      "skillLevel": "Nivel de Habilidad",
+      "gameType": "Tipo de Juego",
+      "startAfter": "Empezar Después",
+      "radius": "Radio de Búsqueda"
+    },
+    "gameTypes": {
+      "singles": "Individual",
+      "doubles": "Dobles",
+      "either": "Cualquiera"
+    },
+    "distance": {
+      "allDistances": "Todas las Distancias",
+      "miles": "millas"
+    },
+    "noBulletins": "No hay boletines disponibles",
+    "noBulletinsMessage": "Aún no hay solicitudes de partido. ¡Sé el primero en publicar un boletín!",
+    "createBulletinForm": {
+      "title": "Título",
+      "description": "Descripción",
+      "location": "Ubicación",
+      "zipCode": "Código Postal",
+      "city": "Ciudad",
+      "state": "Estado/Provincia",
+      "courtName": "Nombre de la Cancha",
+      "startTime": "Hora de Inicio",
+      "endTime": "Hora de Fin",
+      "skillLevel": "Nivel de Habilidad",
+      "gameType": "Tipo de Juego",
+      "submit": "Publicar Boletín",
+      "cancel": "Cancelar"
+    },
+    "bulletinCard": {
+      "by": "Por:",
+      "at": "En:",
+      "skillLevel": "Nivel de Habilidad:",
+      "gameType": "Tipo de Juego:",
+      "respond": "Responder",
+      "delete": "Eliminar",
+      "edit": "Editar",
+      "responses": "Respuestas ({{count}})",
+      "noResponses": "Aún no hay respuestas"
+    },
+    "responseForm": {
+      "title": "Responder a este boletín",
+      "message": "Mensaje",
+      "send": "Enviar Respuesta",
+      "cancel": "Cancelar"
+    },
+    "status": {
+      "pending": "Pendiente",
+      "accepted": "Aceptado",
+      "declined": "Rechazado"
+    },
+    "actions": {
+      "accept": "Aceptar",
+      "decline": "Rechazar"
+    },
+    "demo": {
+      "errorMessage": "No se puede conectar al servidor. Mostrando boletines de muestra para demostrar la funcionalidad.",
+      "demoMessage": "Estás viendo boletines de muestra. Desactiva el modo demo para ver boletines reales."
+    }
+  }
+} 

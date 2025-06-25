@@ -1,0 +1,300 @@
+{
+  "app": {
+    "name": "MatchPoint",
+    "tagline": "Your Ultimate Tennis Platform"
+  },
+  "navigation": {
+    "home": "Home",
+    "findPartner": "Find a partner",
+    "bookCourt": "Book a court",
+    "mySessions": "My sessions",
+    "bulletins": "Bulletins",
+    "communities": "Communities",
+    "events": "Events",
+    "profile": "Profile",
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "register": "Register"
+  },
+  "home": {
+    "welcome": "Welcome to MatchPoint",
+    "subtitle": "Your ultimate platform for connecting with tennis players, booking courts, and joining the tennis community.",
+    "stats": {
+      "activePlayers": "Active Players",
+      "tennisCourts": "Tennis Courts",
+      "matchesMade": "Matches Made"
+    },
+    "cta": "Start Playing Today",
+    "howItWorks": {
+      "title": "How MatchPoint Works",
+      "step1": {
+        "title": "Create Your Profile",
+        "description": "Set up your tennis profile with skill level, preferred playing times, and game styles."
+      },
+      "step2": {
+        "title": "Find Players & Courts",
+        "description": "Discover tennis partners near you and book courts at your favorite locations."
+      },
+      "step3": {
+        "title": "Play & Connect",
+        "description": "Meet up for matches, join events, and become part of the tennis community."
+      }
+    },
+    "features": {
+      "title": "Explore All Features",
+      "findPartners": {
+        "title": "Find Tennis Partners",
+        "description": "Connect with players near you based on skill level, location, and playing style.",
+        "action": "Find Players"
+      },
+      "bookCourts": {
+        "title": "Book Courts",
+        "description": "Reserve tennis courts at your favorite locations with our easy booking system.",
+        "action": "Book Courts"
+      },
+      "playBulletin": {
+        "title": "Play Bulletin",
+        "description": "Post or respond to play requests from other tennis enthusiasts in your area.",
+        "action": "View Bulletin"
+      },
+      "joinEvents": {
+        "title": "Join Events",
+        "description": "Participate in tournaments, clinics, and social tennis events near you.",
+        "action": "Browse Events"
+      },
+      "communities": {
+        "title": "Tennis Communities",
+        "description": "Join local tennis communities and connect with like-minded players.",
+        "action": "Join Communities"
+      },
+      "courtFinder": {
+        "title": "Court Finder",
+        "description": "Discover tennis courts in your area with detailed information and amenities.",
+        "action": "Find Courts"
+      }
+    },
+    "quickStart": {
+      "title": "Quick Start Guide",
+      "newToTennis": {
+        "title": "New to Tennis?",
+        "description": "Start by finding beginner-friendly players and courts in your area. Use our skill level filters to connect with players at your level.",
+        "action": "Find Beginners"
+      },
+      "quickGame": {
+        "title": "Looking for a Quick Game?",
+        "description": "Check the Play Bulletin for immediate playing opportunities or post your own request for a hitting partner.",
+        "action": "Quick Play"
+      },
+      "competitive": {
+        "title": "Competitive Player?",
+        "description": "Join tournaments and competitive events. Connect with advanced players and participate in league play.",
+        "action": "Join Tournaments"
+      }
+    },
+    "community": {
+      "title": "Join Our Tennis Community",
+      "subtitle": "Connect Beyond the Court",
+      "description": "MatchPoint isn't just about finding games – it's about building lasting connections with fellow tennis enthusiasts. Join local communities, share tips, organize group events, and be part of a vibrant tennis network.",
+      "benefits": {
+        "meetPlayers": "Meet like-minded tennis players",
+        "shareTips": "Share tips and improve your game",
+        "organizeEvents": "Organize and join group events",
+        "challenges": "Participate in community challenges"
+      },
+      "action": "Explore Communities"
+    }
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "createAccount": "Create Account",
+    "alreadyHaveAccount": "Already have an account?",
+    "dontHaveAccount": "Don't have an account?",
+    "forgotPassword": "Forgot password?"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "clear": "Clear",
+    "submit": "Submit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close"
+  },
+  "language": {
+    "select": "Select Language",
+    "current": "Current Language",
+    "zh-TW": "繁體中文（台灣）",
+    "en": "English",
+    "fr": "Français",
+    "es": "Español"
+  },
+  "demo": {
+    "banner": "Demo Mode - Some features may be limited",
+    "toggle": "Demo Mode"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "noNotifications": "No notifications at this time"
+  },
+  "nearbyPlayers": {
+    "title": "Players Near You",
+    "loading": "Finding players near you...",
+    "playersFound": "{{count}} player{{count_other}}",
+    "noPlayersFound": "No Players Found",
+    "noPlayersFoundMessage": "No tennis players found in your area yet. This community is growing!",
+    "noPlayersFoundMessageDemo": "Try adjusting your filters to see more players.",
+    "exploreOtherCities": "🌍 Explore Other Cities",
+    "exploreCitiesDescription": "View tennis players from popular cities around the world",
+    "exploreHint": "💡 Click any city to see tennis players there",
+    "backToNearby": "← Back to Nearby Players",
+    "expandedSearch": "Expanded Search Active",
+    "noPlayersInRadius": "No players found within {{radius}} miles of your location.",
+    "expandedTo": "Expanded to {{radius}} miles",
+    "foundInRegion": "found {{count}} players in your region!",
+    "likeToConnect": "💡 Like players to start connecting and find your perfect tennis partner",
+    "playersWithin": "{{inRange}} players within {{radius}} miles, {{outRange}} players outside range",
+    "playersInCity": "Found {{count}} players in {{city}}",
+    "filters": {
+      "skillLevel": "Skill Level",
+      "anyLevel": "Any Level",
+      "searchRadius": "Search Radius",
+      "customDistance": "Custom distance",
+      "radiusHint": "💡 Larger radius shows more players but longer travel distances",
+      "style": "Style",
+      "selectStyles": "Select styles",
+      "availability": "Availability",
+      "selectDays": "Select days",
+      "genderPreference": "Gender Preference",
+      "any": "Any",
+      "male": "Male",
+      "female": "Female",
+      "other": "Other",
+      "newToAreaOnly": "New to Area Only",
+      "applyFilters": "Apply Filters"
+    },
+    "gameStyles": {
+      "singles": "Singles",
+      "doubles": "Doubles",
+      "social": "Social",
+      "competitive": "Competitive"
+    },
+    "weekdays": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    },
+    "playerCard": {
+      "milesAway": "{{distance}} miles away",
+      "distanceNA": "Distance N/A",
+      "locationNotSpecified": "Location not specified",
+      "anyStyle": "Any style",
+      "newToArea": "New to Area",
+      "itsAMatch": "⭐ It's a Match!",
+      "contactInfo": "💬 Contact Info",
+      "like": "👍 Like",
+      "liked": "💚 Liked",
+      "waitingForResponse": "Waiting for response..."
+    },
+    "viewModes": {
+      "detailed": "Detailed",
+      "compact": "Compact"
+    },
+    "tips": {
+      "title": "💡 Tips to find players:",
+      "increaseRadius": "Try increasing your search radius",
+      "removeFilters": "Remove skill level or other filters",
+      "checkBackLater": "Check back later as more players join",
+      "inviteFriends": "Invite friends to create profiles"
+    }
+  },
+  "bulletin": {
+    "title": "Play Bulletin Board",
+    "subtitle": "Find a match partner or respond to requests from other players. 🎾",
+    "loading": "Loading bulletins...",
+    "createNew": "Post New Bulletin",
+    "filters": {
+      "skillLevel": "Skill Level",
+      "gameType": "Game Type",
+      "startAfter": "Start After",
+      "radius": "Search Radius"
+    },
+    "gameTypes": {
+      "singles": "Singles",
+      "doubles": "Doubles",
+      "either": "Either"
+    },
+    "distance": {
+      "allDistances": "All Distances",
+      "miles": "miles"
+    },
+    "noBulletins": "No bulletins available",
+    "noBulletinsMessage": "No match requests yet. Be the first to post a bulletin!",
+    "createBulletinForm": {
+      "title": "Title",
+      "description": "Description",
+      "location": "Location",
+      "zipCode": "Zip Code",
+      "city": "City",
+      "state": "State",
+      "courtName": "Court Name",
+      "startTime": "Start Time",
+      "endTime": "End Time",
+      "skillLevel": "Skill Level",
+      "gameType": "Game Type",
+      "submit": "Post Bulletin",
+      "cancel": "Cancel"
+    },
+    "bulletinCard": {
+      "by": "By:",
+      "at": "At:",
+      "skillLevel": "Skill Level:",
+      "gameType": "Game Type:",
+      "respond": "Respond",
+      "delete": "Delete",
+      "edit": "Edit",
+      "responses": "Responses ({{count}})",
+      "noResponses": "No responses yet"
+    },
+    "responseForm": {
+      "title": "Respond to this bulletin",
+      "message": "Message",
+      "send": "Send Response",
+      "cancel": "Cancel"
+    },
+    "status": {
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "declined": "Declined"
+    },
+    "actions": {
+      "accept": "Accept",
+      "decline": "Decline"
+    },
+    "demo": {
+      "errorMessage": "Unable to connect to server. Showing sample bulletins to demonstrate the feature.",
+      "demoMessage": "You're viewing sample bulletins. Toggle demo mode off to see real bulletins."
+    }
+  }
+} 
