@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../api/config';
 import './Auth.css';
 
 const Register = () => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -25,7 +27,12 @@ const Register = () => {
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
   const navigate = useNavigate();
   
-  const gameStyleOptions = ['Singles', 'Doubles', 'Social', 'Competitive'];
+  const gameStyleOptions = [
+    { key: 'Singles', label: t('nearbyPlayers.gameStyles.singles') },
+    { key: 'Doubles', label: t('nearbyPlayers.gameStyles.doubles') },
+    { key: 'Social', label: t('nearbyPlayers.gameStyles.social') },
+    { key: 'Competitive', label: t('nearbyPlayers.gameStyles.competitive') }
+  ];
   const skillLevels = ['2.0', '2.5', '3.0', '3.5', '4.0', '4.5', '5.0', '5.5+'];
   
   // Common cities for easy selection with flags
@@ -76,42 +83,42 @@ const Register = () => {
 
   const validateForm = () => {
     if (!formData.name.trim()) {
-      setError('Full name is required');
+      setError(t('auth.errors.fullNameRequired'));
       return false;
     }
     
     if (!formData.email.trim()) {
-      setError('Email is required');
+      setError(t('auth.errors.emailRequired'));
       return false;
     }
     
     if (!formData.email.includes('@')) {
-      setError('Please enter a valid email address');
+      setError(t('auth.errors.validEmailRequired'));
       return false;
     }
     
     if (!formData.password) {
-      setError('Password is required');
+      setError(t('auth.errors.passwordRequired'));
       return false;
     }
     
     if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+      setError(t('auth.errors.passwordMinLength'));
       return false;
     }
     
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('auth.errors.passwordsDoNotMatch'));
       return false;
     }
     
     if (!formData.skillLevel) {
-      setError('Please select your skill level');
+      setError(t('auth.errors.skillLevelRequired'));
       return false;
     }
     
     if (!formData.city.trim()) {
-      setError('City is required - it helps us find nearby players');
+      setError(t('auth.errors.cityRequired'));
       return false;
     }
     
@@ -168,7 +175,7 @@ const Register = () => {
         }
       });
       
-      alert('Registration successful! Please sign in.');
+      alert(t('auth.registrationSuccessful'));
       navigate('/login');
     } catch (err) {
       console.error('Registration error:', err);
@@ -177,15 +184,15 @@ const Register = () => {
       if (err.response?.data?.error) {
         setError(err.response.data.error);
       } else if (err.response?.status === 400) {
-        setError('Please check your information and try again.');
+        setError(t('auth.errors.checkInfoAndRetry'));
       } else if (err.response?.status === 409) {
-        setError('An account with this email already exists.');
+        setError(t('auth.errors.accountExists'));
       } else if (err.response?.status >= 500) {
-        setError('Server error. Please try again later.');
+        setError(t('auth.errors.serverError'));
       } else if (err.code === 'NETWORK_ERROR' || !err.response) {
-        setError('Unable to connect to server. Please check your internet connection.');
+        setError(t('auth.errors.networkError'));
       } else {
-        setError('Failed to register. Please try again.');
+        setError(t('auth.errors.registrationFailed'));
       }
     } finally {
       setLoading(false);
@@ -255,12 +262,12 @@ const Register = () => {
         },
         (error) => {
           console.error('Geolocation error:', error);
-          setError('Unable to get your location. Please enter your city manually.');
+          setError(t('auth.errors.unableToGetLocation'));
           setLocationLoading(false);
         }
       );
     } else {
-      setError('Geolocation is not supported by this browser.');
+      setError(t('auth.errors.geolocationNotSupported'));
       setLocationLoading(false);
     }
   };
@@ -268,13 +275,13 @@ const Register = () => {
   return (
     <div className="auth-container">
       <div className="auth-card register-card">
-        <h2>Create an Account</h2>
+        <h2>{t('auth.createAccount')}</h2>
         
         {error && <div className="auth-error">{error}</div>}
         
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="name">Full Name</label>
+            <label htmlFor="name">{t('auth.fullName')}</label>
             <input
               type="text"
               id="name"
@@ -286,7 +293,7 @@ const Register = () => {
           </div>
           
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">{t('auth.email')}</label>
             <input
               type="email"
               id="email"
@@ -299,7 +306,7 @@ const Register = () => {
           
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="password">Password</label>
+              <label htmlFor="password">{t('auth.password')}</label>
               <input
                 type="password"
                 id="password"
@@ -312,7 +319,7 @@ const Register = () => {
             </div>
             
             <div className="form-group">
-              <label htmlFor="confirmPassword">Confirm Password</label>
+              <label htmlFor="confirmPassword">{t('auth.confirmPassword')}</label>
               <input
                 type="password"
                 id="confirmPassword"
@@ -326,7 +333,7 @@ const Register = () => {
           
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="skillLevel">Skill Level (NTRP)</label>
+              <label htmlFor="skillLevel">{t('auth.skillLevel')}</label>
               <select
                 id="skillLevel"
                 name="skillLevel"
@@ -334,7 +341,7 @@ const Register = () => {
                 onChange={handleChange}
                 required
               >
-                <option value="">Select your skill level</option>
+                <option value="">{t('auth.selectSkillLevel')}</option>
                 {skillLevels.map(level => (
                   <option key={level} value={level}>{level}</option>
                 ))}
@@ -342,17 +349,17 @@ const Register = () => {
             </div>
             
             <div className="form-group">
-              <label htmlFor="gender">Gender (for safety filters)</label>
+              <label htmlFor="gender">{t('auth.gender')}</label>
               <select
                 id="gender"
                 name="gender"
                 value={formData.gender}
                 onChange={handleChange}
               >
-                <option value="">Prefer not to say</option>
-                <option value="Female">Female</option>
-                <option value="Male">Male</option>
-                <option value="Other">Other</option>
+                <option value="">{t('auth.preferNotToSay')}</option>
+                <option value="Female">{t('auth.female')}</option>
+                <option value="Male">{t('auth.male')}</option>
+                <option value="Other">{t('auth.other')}</option>
               </select>
             </div>
           </div>
@@ -360,8 +367,8 @@ const Register = () => {
           {/* City Field - Required for finding nearby players */}
           <div className="form-group">
             <label htmlFor="city">
-              City <span className="required">*</span>
-              <small className="field-hint">Used to find nearby tennis players</small>
+              {t('auth.city')} <span className="required">{t('auth.cityRequired')}</span>
+              <small className="field-hint">{t('auth.cityHint')}</small>
             </label>
             <div className="city-input-container">
               <input
@@ -372,7 +379,7 @@ const Register = () => {
                 onChange={handleCityChange}
                 onFocus={() => setShowCitySuggestions(true)}
                 onBlur={() => setTimeout(() => setShowCitySuggestions(false), 200)}
-                placeholder="Enter your city"
+                placeholder={t('auth.enterCity')}
                 required
               />
               <button
@@ -380,7 +387,7 @@ const Register = () => {
                 className="location-button"
                 onClick={getCurrentLocation}
                 disabled={locationLoading}
-                title="Use current location"
+                title={t('auth.useCurrentLocation')}
               >
                 {locationLoading ? '📍' : '🎯'}
               </button>
@@ -389,7 +396,7 @@ const Register = () => {
             {/* City Suggestions */}
             {showCitySuggestions && (
               <div className="city-suggestions">
-                <div className="suggestions-header">Popular cities:</div>
+                <div className="suggestions-header">{t('auth.popularCities')}</div>
                 {commonCities.map(city => (
                   <button
                     key={city.name}
@@ -404,29 +411,29 @@ const Register = () => {
             )}
             
             <small className="form-text text-muted">
-              💡 Your city helps us connect you with nearby players. You can use the location button to auto-detect.
+              {t('auth.cityHelpsConnect')}
             </small>
           </div>
           
           <div className="form-group">
             <fieldset>
-              <legend>Game Styles:</legend>
-                              <div className="checkbox-group">
-                  {gameStyleOptions.map(style => (
-                    <label key={style} className="checkbox-item">
-                      <input
-                        type="checkbox"
-                        name="gameStyles"
-                        value={style}
-                        checked={formData.gameStyles.includes(style)}
-                        onChange={handleGameStyleChange}
-                      />
-                      <span className="checkbox-text">{style}</span>
-                    </label>
-                  ))}
+              <legend>{t('auth.gameStyles')}</legend>
+              <div className="checkbox-group">
+                {gameStyleOptions.map(style => (
+                  <label key={style.key} className="checkbox-item">
+                    <input
+                      type="checkbox"
+                      name="gameStyles"
+                      value={style.key}
+                      checked={formData.gameStyles.includes(style.key)}
+                      onChange={handleGameStyleChange}
+                    />
+                    <span className="checkbox-text">{style.label}</span>
+                  </label>
+                ))}
               </div>
               <small id="game-styles-help" className="form-text text-muted">
-                Select all game styles you're interested in playing
+                {t('auth.selectGameStyles')}
               </small>
             </fieldset>
           </div>
@@ -440,10 +447,10 @@ const Register = () => {
                 onChange={handleChange}
                 aria-describedby="new-to-area-help"
               />
-              <span className="checkbox-text">I'm new to the area and looking to meet players</span>
+              <span className="checkbox-text">{t('auth.newToArea')}</span>
             </label>
             <small id="new-to-area-help" className="form-text text-muted">
-              This helps us connect you with welcoming players and communities
+              {t('auth.newToAreaHelp')}
             </small>
           </div>
           
@@ -452,12 +459,12 @@ const Register = () => {
             className="auth-button"
             disabled={loading}
           >
-            {loading ? 'Creating Account...' : 'Create Account'}
+            {loading ? t('auth.creatingAccount') : t('auth.createAccount')}
           </button>
         </form>
         
         <div className="auth-link">
-          Already have an account? <span onClick={() => navigate('/login')}>Sign In</span>
+          {t('auth.alreadyHaveAccount')} <span onClick={() => navigate('/login')}>{t('auth.signIn')}</span>
         </div>
       </div>
     </div>

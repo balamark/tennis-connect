@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../api/config';
 import './Auth.css';
 
 const Login = ({ setIsAuthenticated, updateUserInfo }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -46,7 +48,7 @@ const Login = ({ setIsAuthenticated, updateUserInfo }) => {
       navigate('/');
     } catch (err) {
       console.error('Login error:', err);
-      const errorMessage = err.response?.data?.error || 'Failed to login. Please try again.';
+      const errorMessage = err.response?.data?.error || t('auth.errors.loginFailed');
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -56,13 +58,13 @@ const Login = ({ setIsAuthenticated, updateUserInfo }) => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h2>Sign In</h2>
+        <h2>{t('auth.signIn')}</h2>
         
         {error && <div className="auth-error">{error}</div>}
         
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">{t('auth.email')}</label>
             <input
               type="email"
               id="email"
@@ -74,7 +76,7 @@ const Login = ({ setIsAuthenticated, updateUserInfo }) => {
           </div>
           
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">{t('auth.password')}</label>
             <input
               type="password"
               id="password"
@@ -90,12 +92,12 @@ const Login = ({ setIsAuthenticated, updateUserInfo }) => {
             className="auth-button"
             disabled={loading}
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? t('auth.signingIn') : t('auth.signIn')}
           </button>
         </form>
         
         <div className="auth-link">
-          Don't have an account? <span onClick={() => navigate('/register')}>Register</span>
+          {t('auth.dontHaveAccount')} <span onClick={() => navigate('/register')}>{t('auth.register')}</span>
         </div>
       </div>
     </div>

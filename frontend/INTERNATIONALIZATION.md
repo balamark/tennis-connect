@@ -125,10 +125,19 @@ const MyComponent = () => {
   - Response handling and user interactions
   - Status messages and action confirmations
 
+### ✅ Newly Completed
+- **Login/Register Forms** - Complete translation including all form fields, validation messages, and user feedback
+- **Demo Mode Toggle** - Full internationalization with specific Mandarin translation "Demo模式" as requested
+- **Profile/Edit Profile Page** - Complete translation including:
+  - Personal Information section
+  - Tennis Information section  
+  - Preferred Playing Time section
+  - "Explore Tennis players in other cities" section
+  - All form fields, labels, and action buttons
+
 ### ⚠️ Partial Translation
-- Login/Register forms (still contain some hardcoded English strings)
 - Error messages and notifications in other components
-- Other component pages (Court Finder, Events, Communities, Profile)
+- Other component pages (Court Finder, Events, Communities)
 
 ## Future Enhancements
 

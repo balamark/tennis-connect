@@ -1,7 +1,9 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDemoMode } from '../contexts/DemoModeContext';
 
 const DemoModeToggle = ({ className = '' }) => {
+  const { t } = useTranslation();
   const { isDemoMode, toggleDemoMode } = useDemoMode();
 
   return (
@@ -13,9 +15,9 @@ const DemoModeToggle = ({ className = '' }) => {
             : 'bg-green-100 text-green-800 hover:bg-green-200'
         }`}
         onClick={toggleDemoMode}
-        title={`Currently in ${isDemoMode ? 'demo' : 'live'} mode. Click to switch to ${isDemoMode ? 'live' : 'demo'} mode.`}
+        title={isDemoMode ? t('demo.currentlyDemo') : t('demo.currentlyLive')}
       >
-        💡 {isDemoMode ? 'Demo Mode' : 'Live Mode'}
+        💡 {isDemoMode ? t('demo.toggle') : t('demo.liveMode')}
       </button>
     </div>
   );

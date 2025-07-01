@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../api/config';
 import './Profile.css';
 import Modal from './Modal';
 
 const Profile = () => {
+  const { t } = useTranslation();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -34,9 +36,22 @@ const Profile = () => {
   // Submission loading state
   const [submitting, setSubmitting] = useState(false);
   
-  const gameStyles = ['Singles', 'Doubles', 'Competitive', 'Social'];
+  const gameStyles = [
+    { key: 'Singles', label: t('nearbyPlayers.gameStyles.singles') },
+    { key: 'Doubles', label: t('nearbyPlayers.gameStyles.doubles') },
+    { key: 'Competitive', label: t('nearbyPlayers.gameStyles.competitive') },
+    { key: 'Social', label: t('nearbyPlayers.gameStyles.social') }
+  ];
   const skillLevels = ['2.0', '2.5', '3.0', '3.5', '4.0', '4.5', '5.0', '5.5+'];
-  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const daysOfWeek = [
+    { key: 'Monday', label: t('profile.monday') },
+    { key: 'Tuesday', label: t('profile.tuesday') },
+    { key: 'Wednesday', label: t('profile.wednesday') },
+    { key: 'Thursday', label: t('profile.thursday') },
+    { key: 'Friday', label: t('profile.friday') },
+    { key: 'Saturday', label: t('profile.saturday') },
+    { key: 'Sunday', label: t('profile.sunday') }
+  ];
 
   // Helper function to format time from various formats
   const formatTime = (timeString) => {
@@ -266,8 +281,8 @@ const Profile = () => {
       setModalState({
         isOpen: true,
         type: 'error',
-        title: 'Authentication Required',
-        message: 'Please log in to update your profile.'
+        title: t('profile.authRequired'),
+        message: t('profile.loginToUpdate')
       });
       return;
     }
@@ -309,13 +324,13 @@ const Profile = () => {
       setModalState({
         isOpen: true,
         type: 'success',
-        title: 'Success!',
-        message: 'Your profile has been updated successfully!'
+        title: t('common.success'),
+        message: t('profile.profileUpdated')
       });
     } catch (err) {
       console.error('Error updating profile:', err);
       
-      let errorMessage = 'Failed to update profile. Please try again.';
+      let errorMessage = t('profile.updateFailed');
       
       if (err.response?.status === 401) {
         errorMessage = 'Your session has expired. Please log in again.';
@@ -329,7 +344,7 @@ const Profile = () => {
       setModalState({
         isOpen: true,
         type: 'error',
-        title: 'Update Failed',
+        title: t('common.error'),
         message: errorMessage
       });
     } finally {
@@ -338,7 +353,7 @@ const Profile = () => {
   };
 
   if (loading) {
-    return <div className="loading">Loading profile...</div>;
+    return <div className="loading">{t('common.loading')}</div>;
   }
 
   if (error && !profile) {
@@ -348,13 +363,13 @@ const Profile = () => {
   return (
     <div className="profile-container">
       <div className="profile-header">
-        <h1>My Profile</h1>
+        <h1>{t('profile.title')}</h1>
         {!editing && (
           <button 
             className="edit-profile-button"
             onClick={() => setEditing(true)}
           >
-            Edit Profile
+            {t('profile.editProfile')}
           </button>
         )}
       </div>
@@ -363,7 +378,7 @@ const Profile = () => {
         <div className="profile-view">
           <div className="profile-info-grid">
             <div className="profile-info-card">
-              <h2>Personal Information</h2>
+              <h2>{t('profile.personalInformation')}</h2>
               <div className="profile-info-row">
                 <span className="info-label">Name:</span>
                 <span className="info-value">{profile.name}</span>
@@ -389,7 +404,7 @@ const Profile = () => {
             </div>
             
             <div className="profile-info-card">
-              <h2>Tennis Information</h2>
+              <h2>{t('profile.tennisInformation')}</h2>
               <div className="profile-info-row">
                 <span className="info-label">Skill Level:</span>
                 <span className="info-value">
@@ -415,7 +430,7 @@ const Profile = () => {
           </div>
           
           <div className="profile-availability">
-            <h2>Preferred Playing Times</h2>
+            <h2>{t('profile.preferredPlayingTime')}</h2>
             {(() => {
               console.log('Profile preferred times:', profile.preferredTimes);
               return null;
@@ -439,7 +454,7 @@ const Profile = () => {
 
           {/* Quick City Explorer */}
           <div className="profile-city-explorer">
-            <h2>🌍 Explore Tennis Players in Other Cities</h2>
+            <h2>🌍 {t('profile.exploreOtherCities')}</h2>
             <p className="explorer-description">
               Discover tennis communities in popular cities around the world
             </p>
@@ -467,9 +482,9 @@ const Profile = () => {
         <div className="profile-form-container">
           <form className="profile-form" onSubmit={handleSubmit}>
             <div className="form-section">
-              <h2>Personal Information</h2>
+              <h2>{t('profile.personalInformation')}</h2>
               <div className="form-group">
-                <label htmlFor="name">Name</label>
+                <label htmlFor="name">{t('profile.name')}</label>
                 <input
                   type="text"
                   id="name"
@@ -481,7 +496,7 @@ const Profile = () => {
               </div>
               
               <div className="form-group">
-                <label htmlFor="email">Email</label>
+                <label htmlFor="email">{t('profile.email')}</label>
                 <input
                   type="email"
                   id="email"
@@ -597,10 +612,10 @@ const Profile = () => {
             </div>
             
             <div className="form-section">
-              <h2>Tennis Information</h2>
+              <h2>{t('profile.tennisInformation')}</h2>
               
               <div className="form-group">
-                <label htmlFor="skillLevel">Skill Level (NTRP)</label>
+                <label htmlFor="skillLevel">{t('profile.skillLevel')}</label>
                 <select
                   id="skillLevel"
                   name="skillLevel"
@@ -620,15 +635,15 @@ const Profile = () => {
                   <legend>Game Styles:</legend>
                   <div className="checkbox-group">
                     {gameStyles.map(style => (
-                      <label key={style} className="checkbox-item">
+                      <label key={style.key} className="checkbox-item">
                         <input
                           type="checkbox"
                           name="gameStyles"
-                          value={style}
-                          checked={formData.gameStyles && formData.gameStyles.includes(style)}
-                          onChange={() => handleGameStyleChange(style)}
+                          value={style.key}
+                          checked={formData.gameStyles && formData.gameStyles.includes(style.key)}
+                          onChange={() => handleGameStyleChange(style.key)}
                         />
-                        <span className="checkbox-text">{style}</span>
+                        <span className="checkbox-text">{style.label}</span>
                       </label>
                     ))}
                   </div>
@@ -650,13 +665,13 @@ const Profile = () => {
             
             <div className="form-section">
               <div className="time-slots-header">
-                <h2>Preferred Playing Times</h2>
+                <h2>{t('profile.preferredPlayingTime')}</h2>
                 <button 
                   type="button" 
                   className="add-time-slot-button"
                   onClick={addTimeSlot}
                 >
-                  + Add Time Slot
+                  + {t('profile.addTimeSlot')}
                 </button>
               </div>
               
@@ -664,19 +679,19 @@ const Profile = () => {
                 <div key={index} className="time-slot-form">
                   <div className="form-row">
                     <div className="form-group">
-                      <label>Day</label>
+                      <label>{t('profile.dayOfWeek')}</label>
                       <select
                         value={timeSlot.dayOfWeek}
                         onChange={(e) => handleTimeSlotChange(index, 'dayOfWeek', e.target.value)}
                       >
                         {daysOfWeek.map(day => (
-                          <option key={day} value={day}>{day}</option>
+                          <option key={day.key} value={day.key}>{day.label}</option>
                         ))}
                       </select>
                     </div>
                     
                     <div className="form-group">
-                      <label>Start Time</label>
+                      <label>{t('profile.startTime')}</label>
                       <input
                         type="time"
                         value={timeSlot.startTime}
@@ -685,7 +700,7 @@ const Profile = () => {
                     </div>
                     
                     <div className="form-group">
-                      <label>End Time</label>
+                      <label>{t('profile.endTime')}</label>
                       <input
                         type="time"
                         value={timeSlot.endTime}
@@ -706,23 +721,23 @@ const Profile = () => {
             </div>
             
             <div className="form-actions">
-              <button 
+                            <button 
                 type="submit" 
                 className="save-profile-button"
                 disabled={submitting}
               >
-                {submitting ? 'Saving...' : 'Save Profile'}
+                {submitting ? t('common.loading') : t('profile.saveChanges')}
               </button>
               <button 
                 type="button" 
                 className="cancel-button"
                 disabled={submitting}
                 onClick={() => {
-                  setFormData(profile);
+                  setFormData(profile);  
                   setEditing(false);
                 }}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </form>
